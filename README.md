@@ -32,9 +32,9 @@ R
 ```r
 install.packages(
   "cmdstanr",
-  repos = c("[https://mc-stan.org/r-packages/](https://mc-stan.org/r-packages/)",
-  getOption("repos"))
+  repos = c("https://mc-stan.org/r-packages/", getOption("repos"))
 )
+
 cmdstanr::check_cmdstan_toolchain(fix = TRUE) # Check system setting
 cmdstanr::install_cmdstan()
 ```
