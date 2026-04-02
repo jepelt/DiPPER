@@ -102,6 +102,7 @@ run_dipper <- function(prep_data,
     }
 
     message("Compiling or loading cached Stan model...")
+    message("Note: The first run may take a while as the model is being compiled.")
     mod <- suppressWarnings(suppressMessages(
         cmdstanr::cmdstan_model(stan_file, quiet = TRUE)
     ))
