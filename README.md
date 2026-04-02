@@ -51,7 +51,7 @@ library(DiPPER)
 data("tse_thomas")
 
 # Run DiPPER. 
-# Note: This may take around two minutes to run for the first time.
+# This may take around two minutes to run.
 # The first term in the formula (here: study_condition) is automatically 
 # used as the main variable of interest.
 fit <- DiPPER(
