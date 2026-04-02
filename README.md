@@ -22,12 +22,14 @@ You can install the development version of DiPPER from GitHub using:
 
 ```r
 # install.packages("devtools")
-devtools::install_github("yourusername/DiPPER")
+devtools::install_github("jepelt/DiPPER")
+```
 
 Note: DiPPER requires cmdstanr and a working Stan backend to compile
 and run the Bayesian models. You can install and configure it with:
 R
 
+```r
 install.packages(
   "cmdstanr",
   repos = c("[https://mc-stan.org/r-packages/](https://mc-stan.org/r-packages/)",
