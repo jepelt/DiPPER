@@ -47,20 +47,20 @@ package.
 library(DiPPER)
 
 # Load example data (TreeSummarizedExperiment object)
-# This dataset compares (N = 20 + 20) rats on High/Low fat diet.
+# This dataset compares (N = 20 + 20) rats on a High/Low fat diet.
 data("tse_hintikka")
 
 # Run DiPPER. 
 # The first term in the formula (here: Fat) is automatically 
-# used as the variable of interest. XOS (xylo-oligosaccaride supplementation)
+# used as the variable of interest. XOS (xylo-oligosaccharide supplementation)
 # is included as a covariate to adjust for.
-# Note: This may take around two minutes to run for the first time due to
-# compilation.
+# Note: When using DiPPER for the first time, it may take around two minutes
+# to run the function due to the compilation of the Stan model.
 
 fit <- DiPPER(
   tse = tse_hintikka,
   formula = ~ Fat + XOS,
-  tax_rank = 'Genus',
+  tax_rank = "Genus",
   seed = 1
 )
 
