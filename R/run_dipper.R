@@ -1,6 +1,9 @@
 #' Run the DiPPER model using cmdstanr
 #'
 #' @param prep_data The list returned by \code{prep_dipper_data}.
+#' @param symmetric Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
+#'   is used for the differential prevelance parameters of interest. If FALSE
+#'   (default), the prior is allowed to be asymmetric.
 #' @param iter_sampling Number of post-warmup MCMC iterations per chain.
 #' @param iter_warmup Number of warmup MCMC iterations per chain. Defaults
 #'   to iter_sampling.
@@ -11,7 +14,7 @@
 #' @param seed Random seed for reproducibility.
 #' @param adapt_delta Target average acceptance probability (default 0.8).
 #' @param max_treedepth Maximum depth of the trees (default 10).
-#' @param prior_nu_sd Prior standard deviation for nu.
+#' @param prior_nu_sd Prior standard dev for nu (ignored if symmetric).
 #' @param prior_tau_sd Prior standard deviation for tau.
 #' @param prior_alpha_sd Prior standard deviation for alpha (intercept).
 #' @param prior_cov_sd Default prior standard dev for covariates.
@@ -22,6 +25,7 @@
 #'
 #' @export
 run_dipper <- function(prep_data,
+                       symmetric = FALSE,
                        iter_sampling = 1000,
                        iter_warmup = iter_sampling,
                        run_diagnostics = TRUE,
@@ -75,19 +79,24 @@ run_dipper <- function(prep_data,
         X = prep_data$X,
         prior_alpha_mean = 0.0,
         prior_alpha_sd = prior_alpha_sd,
-        prior_nu_sd = prior_nu_sd,
         prior_tau_sd = prior_tau_sd,
         prior_cov_mean = as.array(p_mean),
         prior_cov_sd = as.array(p_sd)
     )
 
-    stan_file <- system.file(
-        "stan", "dipper_dp_asym.stan",
-        package = "DiPPER"
-    )
+    if (!symmetric) {
+        stan_data$prior_nu_sd <- prior_nu_sd
+        file_name <- "dipper_dp_asym.stan"
+        prior_str <- "asymmetric"
+    } else {
+        file_name <- "dipper_dp_sym.stan"
+        prior_str <- "symmetric"
+    }
+
+    stan_file <- system.file("stan", file_name, package = "DiPPER")
 
     if (stan_file == "") {
-        stop("Stan file not found in 'inst/stan/'.")
+        stop(sprintf("Stan file '%s' not found in 'inst/stan/'.", file_name))
     }
 
     if (is.logical(print_progress) && !print_progress) {
@@ -102,14 +111,14 @@ run_dipper <- function(prep_data,
     }
 
     message("Compiling or loading cached Stan model...")
-    message("Note: The first run may take a while as the model is being compiled.")
+    message("Note: The first run may take a while as the model is compiled.")
     mod <- suppressWarnings(suppressMessages(
         cmdstanr::cmdstan_model(stan_file, quiet = TRUE)
     ))
 
     message(sprintf(
-        "Starting MCMC sampling with %d chains on %d cores...",
-        chains, cores
+        "Starting MCMC sampling (%s prior) with %d chains on %d cores...",
+        prior_str, chains, cores
     ))
 
     if (refresh_val == 0) {
@@ -184,7 +193,8 @@ run_dipper <- function(prep_data,
     structure(
         list(
             stanfit = fit,
-            dipper_data = prep_data
+            dipper_data = prep_data,
+            symmetric = symmetric
         ),
         class = "dipper_fit"
     )

@@ -47,21 +47,26 @@ package.
 library(DiPPER)
 
 # Load example data (TreeSummarizedExperiment object)
-# This dataset compares subjects with and without colorectal cancer (CRC).
-data("tse_thomas")
+# This dataset compares (N = 20 + 20) rats on High/Low fat diet.
+data("tse_hintikka")
 
 # Run DiPPER. 
-# Note: This may take around two minutes to run for the first time.
-# The first term in the formula (here: study_condition) is automatically 
-# used as the main variable of interest.
+# The first term in the formula (here: Fat) is automatically 
+# used as the variable of interest. XOS (xylo-oligosaccaride supplementation)
+# is included as a covariate to adjust for.
+# Note: This may take around two minutes to run for the first time due to
+# compilation.
+
 fit <- DiPPER(
-  tse = tse_thomas,
-  formula = ~ study_condition + age + bmi + sex
+  tse = tse_hintikka,
+  formula = ~ Fat + XOS,
+  tax_rank = 'Genus',
+  seed = 1
 )
 
 # Extract summarized results as a data.frame
-res <- summary_dipper(fit)
+res <- summary(fit)
 
 # Create a forest plot (showing only 'significant' taxa)
-plot_dipper(fit, show_taxa = "significant")
+plot(fit, show_taxa = "significant")
 ```

@@ -1,20 +1,22 @@
-#' Create a forest plot from a DiPPER fit
+#' Plot method for DiPPER fit objects
 #'
-#' @param fit A dipper_fit object returned by run_dipper.
+#' @param x A dipper_fit object returned by run_dipper.
 #' @param prob Numeric. Probability mass for the credible intervals.
 #'   Default is 0.95 (95% interval).
 #' @param show_taxa Selection criteria for taxa: "significant" (default),
 #'   "all", or an integer k (top k taxa ranked by pseudo_q).
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A ggplot object.
 #' @import ggplot2
+#' @method plot dipper_fit
 #' @export
-plot_dipper <- function(fit, prob = 0.95, show_taxa = "significant") {
-    if (!inherits(fit, "dipper_fit")) {
+plot.dipper_fit <- function(x, prob = 0.95, show_taxa = "significant", ...) {
+    if (!inherits(x, "dipper_fit")) {
         stop("Input must be a 'dipper_fit' object.")
     }
 
-    d_data <- fit$dipper_data
+    d_data <- x$dipper_data
     taxa <- d_data$taxa_names
     var_int <- d_data$var_of_interest
     effect_name <- d_data$design_matrix_cols[1]
@@ -25,7 +27,7 @@ plot_dipper <- function(fit, prob = 0.95, show_taxa = "significant") {
     upper_prob <- 1 - (alpha_level / 2)
 
     # 1. Extract draws and calculate statistics manually
-    draws <- fit$stanfit$draws(variables = "beta", format = "matrix")
+    draws <- x$stanfit$draws(variables = "beta", format = "matrix")
 
     prob_pos <- colMeans(draws > 0)
     prob_neg <- colMeans(draws < 0)

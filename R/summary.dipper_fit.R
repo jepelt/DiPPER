@@ -1,19 +1,22 @@
 #' Summarize the results from a DiPPER model fit
 #'
-#' @param fit A dipper_fit object returned by run_dipper.
+#' @param object A dipper_fit object returned by run_dipper.
 #' @param prob Probability mass for the credible interval (default 0.95).
 #' @param scale Character string, either "log_odds" or "odds_ratio".
+#' @param ... Additional arguments (currently ignored).
 #'
 #' @return A data.frame containing the summarized results for each taxon.
+#' @method summary dipper_fit
 #' @export
 #' @importFrom stats median quantile
-summary_dipper <- function(fit,
-                           prob = 0.95,
-                           scale = c("log_odds", "odds_ratio")) {
+summary.dipper_fit <- function(object,
+                               prob = 0.95,
+                               scale = c("log_odds", "odds_ratio"),
+                               ...) {
 
     scale <- match.arg(scale)
 
-    if (!inherits(fit, "dipper_fit")) {
+    if (!inherits(object, "dipper_fit")) {
         stop("Input must be a 'dipper_fit' object.")
     }
 
@@ -21,7 +24,7 @@ summary_dipper <- function(fit,
     lower_prob <- alpha / 2
     upper_prob <- 1 - (alpha / 2)
 
-    draws <- fit$stanfit$draws("beta", format = "matrix")
+    draws <- object$stanfit$draws("beta", format = "matrix")
 
     est_median <- apply(draws, 2, stats::median)
     ci_lower <- apply(draws, 2, stats::quantile, probs = lower_prob)
@@ -44,7 +47,7 @@ summary_dipper <- function(fit,
     }
 
     res <- data.frame(
-        taxon = fit$dipper_data$taxa_names,
+        taxon = object$dipper_data$taxa_names,
         estimate = est_median,
         lwr = ci_lower,
         upr = ci_upper,

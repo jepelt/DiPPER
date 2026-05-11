@@ -11,6 +11,7 @@ DiPPER(
   formula,
   var_of_interest = NULL,
   read_depth = TRUE,
+  symmetric = F,
   assay_type = c("counts", "relabundance", "pa"),
   assay_name = NULL,
   tax_rank = NULL,
@@ -19,6 +20,7 @@ DiPPER(
   min_absent = min_present,
   iter_sampling = 1000,
   cores = 4,
+  seed = 1,
   ...
 )
 }
@@ -37,6 +39,10 @@ If NULL, the first term of the formula is automatically used.}
 
 \item{read_depth}{Logical or character. If TRUE, calculates log10 read depth
 from counts. If character, uses the specified metadata column.}
+
+\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
+is used for the differential prevelance parameters of interest. If FALSE
+(default), the prior is allowed to be asymmetric.}
 
 \item{assay_type}{Character. Type of the assay: "counts" (default),
 "relabundance", or "pa" (presence/absence).}
@@ -63,6 +69,8 @@ must be absent. Default is min_present.}
 \item{iter_sampling}{Number of post-warmup MCMC iterations per chain.}
 
 \item{cores}{Number of CPU cores to use.}
+
+\item{seed}{Random seed for reproducibility.}
 
 \item{...}{Additional arguments passed directly to \code{run_dipper}.}
 }

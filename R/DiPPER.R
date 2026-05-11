@@ -15,6 +15,7 @@ DiPPER <- function(tse = NULL,
                    formula,
                    var_of_interest = NULL,
                    read_depth = TRUE,
+                   symmetric = F,
                    assay_type = c("counts", "relabundance", "pa"),
                    assay_name = NULL,
                    tax_rank = NULL,
@@ -23,10 +24,11 @@ DiPPER <- function(tse = NULL,
                    min_absent = min_present,
                    iter_sampling = 1000,
                    cores = 4,
+                   seed = 1,
                    ...) {
 
     # Prepare the data with standard settings for covariates
-    prepped_data <- prep_dipper_data(
+    prepared_data <- prep_dipper_data(
         tse = tse,
         meta = meta,
         abund_matrix = abund_matrix,
@@ -45,9 +47,11 @@ DiPPER <- function(tse = NULL,
 
     # Run the core model
     result <- run_dipper(
-        prep_data = prepped_data,
+        prep_data = prepared_data,
+        symmetric = symmetric,
         iter_sampling = iter_sampling,
         cores = cores,
+        seed = 1,
         ...
     )
 

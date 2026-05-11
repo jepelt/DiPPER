@@ -6,6 +6,7 @@
 \usage{
 run_dipper(
   prep_data,
+  symmetric = FALSE,
   iter_sampling = 1000,
   iter_warmup = iter_sampling,
   run_diagnostics = TRUE,
@@ -26,6 +27,10 @@ run_dipper(
 \arguments{
 \item{prep_data}{The list returned by \code{prep_dipper_data}.}
 
+\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
+is used for the differential prevelance parameters of interest. If FALSE
+(default), the prior is allowed to be asymmetric.}
+
 \item{iter_sampling}{Number of post-warmup MCMC iterations per chain.}
 
 \item{iter_warmup}{Number of warmup MCMC iterations per chain. Defaults
@@ -44,7 +49,7 @@ Default is TRUE.}
 
 \item{max_treedepth}{Maximum depth of the trees (default 10).}
 
-\item{prior_nu_sd}{Prior standard deviation for nu.}
+\item{prior_nu_sd}{Prior standard dev for nu (ignored if symmetric).}
 
 \item{prior_tau_sd}{Prior standard deviation for tau.}
 
