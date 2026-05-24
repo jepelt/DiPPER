@@ -15,7 +15,7 @@ A pre-print of the paper introducing DiPPER can be found
     prevalence estimates and uncertainty intervals that are *naturally* and
     automatically adjusted for multiple testing through hierarchical shrinkage.
 * **Robust in boundary cases:** DiPPER produces finite differential prevalence
-    estimates and uncertainty intervals even in boundary cases (e.g. when a taxon
+    estimates and uncertainty intervals even in boundary cases (e.g., when a taxon
     is completely absent or fully present in one study group) where some
     standard approaches fail.
 
