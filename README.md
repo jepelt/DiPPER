@@ -12,7 +12,7 @@ A pre-print of the paper introducing DiPPER can be found
 ## Advantages of DiPPER
 
 * **Inherent multiplicity adjustment:** DiPPER provides differential
-    prevalence estimates and uncertainty intervals that are *naturally* and
+    prevalence estimates and uncertainty intervals that are naturally and
     automatically adjusted for multiple testing through hierarchical shrinkage.
     Differentially prevalent taxa can thus be detected without any post-hoc
     multiplicity adjustments.
