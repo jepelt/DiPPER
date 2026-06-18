@@ -1,18 +1,25 @@
 # DiPPER
 
-This is an R package implementing DiPPER (**Di**fferential **P**revalence via 
+This is an R package implementing DiPPER (**Di**fferential **P**revalence via
 **P**robabilistic **E**stimation in **R**).
 
-DiPPER is a Bayesian hierarchical model designed for differential prevalence 
-analysis, particularly in microbiome studies. Unlike standard frequentist 
-approaches (e.g., Wald test) which may fail or yield infinite estimates in 
-boundary cases (such as when a taxon is completely absent in one group), 
-DiPPER produces robust, finite estimates through Bayesian regularization. 
-Furthermore, the model provides differential prevalence estimates and 
-uncertainty intervals that are inherently adjusted for multiplicity.
+DiPPER is a Bayesian hierarchical model-based approach designed for differential
+prevalence analysis, particularly in microbiome studies.
 
-A pre-print of the paper introducing DiPPER can be found 
+A pre-print of the paper introducing DiPPER can be found
 [here](https://arxiv.org/abs/2602.05938).
+
+## Advantages of DiPPER
+
+* **Inherent multiplicity adjustment:** DiPPER provides differential
+    prevalence estimates and uncertainty intervals that are naturally and
+    automatically adjusted for multiple testing through hierarchical shrinkage.
+    Differentially prevalent taxa can thus be detected without any post-hoc
+    multiplicity adjustments.
+* **Robust in boundary cases:** DiPPER produces finite differential prevalence
+    estimates and uncertainty intervals even in boundary cases (e.g., when a taxon
+    is completely absent or fully present in one study group) where some
+    standard approaches fail.
 
 ## Installation
 
