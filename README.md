@@ -23,19 +23,20 @@ A pre-print of the paper introducing DiPPER can be found
 * **Longitudinal data support:** DiPPER can handle longitudinal (or
   repeated measures) data by including random intercepts in the model.
 
+
 ## Installation
 
-You can install the development version of DiPPER from GitHub using:
+DiPPER relies on packages from Bioconductor (for handling microbiome data) and
+Stan (for Bayesian inference). Please ensure these are installed first:
 
 ```r
-# install.packages("remotes")
-remotes::install_github("jepelt/DiPPER")
-```
+# 1. Install Bioconductor dependencies
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+BiocManager::install(c("SummarizedExperiment", "TreeSummarizedExperiment"))
 
-DiPPER also requires the cmdstanr package and a working Stan toolchain.
-You can install them as follows:
-
-```r
+# 2. Install cmdstanr
 install.packages("cmdstanr",
                  repos = c("[https://stan-dev.r-universe.dev/](https://stan-dev.r-universe.dev/)",
                            getOption("repos")))
@@ -45,6 +46,14 @@ cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
 # Install the Stan backend (only needs to be done once)
 cmdstanr::install_cmdstan()
+```
+
+Once the dependencies are ready, you can install the development version of
+DiPPER from GitHub using:
+
+```r
+# install.packages("remotes")
+remotes::install_github("jepelt/DiPPER")
 ```
 
 ## Example Usage
@@ -86,7 +95,7 @@ res <- summary(fit)
 plot(fit, show.taxa = "significant")
 ```
 
-![Forest plot of the Hintikka dataset](man/figures/plot_hintikka.png)
+<img src="man/figures/plot_hintikka.png" width="600" alt="Forest plot of the Hintikka dataset">
 
 ### Example 2 (Longitudinal setting)
 
@@ -140,16 +149,4 @@ res2 <- summary(fit2)
 plot(fit2, show.taxa = "significant")
 ```
 
-![Forest plot of the Vatanen dataset](man/figures/plot_vatanen.png)
-
-## References
-
-* Hintikka, L., et al. (2021). Xylo-Oligosaccharides in Prevention of Hepatic 
-  Steatosis and Adipose Tissue Inflammation: Associating Taxonomic and 
-  Metabolomic Patterns in Fecal Microbiomes with Biclustering. *International 
-  Journal of Environmental Research and Public Health*, 18(8), 4049. 
-  [https://www.mdpi.com/1660-4601/18/8/4049](https://www.mdpi.com/1660-4601/18/8/4049)
-
-* Vatanen, T., et al. (2016). Variation in Microbiome LPS Immunogenicity 
-  Contributes to Autoimmunity in Humans. *Cell*, 165(4), 842-853. 
-  [https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/](https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/)
+<img src="man/figures/plot_vatanen.png" width="600" alt="Forest plot of the Vatanen dataset">
