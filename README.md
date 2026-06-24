@@ -78,7 +78,7 @@ data("tse_hintikka")
 # as a covariate. The name of the assay (here: 'counts') must also be provided.
 #
 # Note: When using DiPPER for the first time, compiling the Stan model may
-# take a few minutes and produce verbose C++ output. This is expected.
+# take around one minute and produce verbose C++ output. This is expected.
 fit <- dipper(
     tse = tse_hintikka,
     formula = ~ Fat + XOS,
