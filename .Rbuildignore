@@ -5,3 +5,4 @@
 inst/stan/.*\.exe$
 inst/stan/.*\.rds$
 ^data-raw$
+^LICENSE\.md$
