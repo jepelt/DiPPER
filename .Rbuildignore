@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^\.positai$
 ^\.claude$
+inst/stan/.*\.exe$
+inst/stan/.*\.rds$
+^data-raw$

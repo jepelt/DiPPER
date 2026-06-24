@@ -4,7 +4,7 @@
 \alias{plot.dipper_fit}
 \title{Plot method for DiPPER fit objects}
 \usage{
-\method{plot}{dipper_fit}(x, prob = 0.95, show_taxa = "significant", ...)
+\method{plot}{dipper_fit}(x, prob = 0.95, show.taxa = 10, original.scale = TRUE, ...)
 }
 \arguments{
 \item{x}{A dipper_fit object returned by run_dipper.}
@@ -12,8 +12,13 @@
 \item{prob}{Numeric. Probability mass for the credible intervals.
 Default is 0.95 (95\% interval).}
 
-\item{show_taxa}{Selection criteria for taxa: "significant" (default),
-"all", or an integer k (top k taxa ranked by pseudo_q).}
+\item{show.taxa}{Selection criteria for taxa: "significant" (credible
+intervals not overlapping OR = 1),
+"all", or an integer k (top k taxa ranked by pseudo_q). Default is 10.}
+
+\item{original.scale}{Logical. If TRUE (default), continuous covariates
+are back-transformed to their original scale. If FALSE, results are
+presented per one standard deviation increase.}
 
 \item{...}{Additional arguments (currently ignored).}
 }

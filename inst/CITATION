@@ -1,0 +1,20 @@
+citHeader("To cite package 'DiPPER' in publications use:")
+
+bibentry(
+  bibtype = "Unpublished",
+  title = "DiPPER: A Bayesian approach to differential prevalence analysis with applications in microbiome studies",
+  author = c(
+    person("Juho", "Pelto"),
+    person("Kari", "Auranen"),
+    person("Janne V.", "Kujala"),
+    person("Leo", "Lahti")
+  ),
+  year = "2026",
+  note = "arXiv preprint arXiv:2602.05938",
+  url = "https://arxiv.org/abs/2602.05938",
+  textVersion = paste(
+    "Pelto, J., et al. (2026). DiPPER: A Bayesian approach to differential",
+    "prevalence analysis with applications in microbiome studies.",
+    "arXiv preprint arXiv:2602.05938."
+  )
+)

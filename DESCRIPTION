@@ -1,19 +1,34 @@
 Package: DiPPER
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: A Bayesian Hierarchical Approach to Differential Prevalence Analysis
+Version: 0.1.0
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person(given = "Juho",
+           family = "Pelto",
+           role = c("aut", "cre"),
+           email = "jepelt@utu.fi",
+           comment = c(ORCID = "0000-0001-8820-8014"))
+Description: Implements a Bayesian hierarchical model for differential prevalence 
+    analysis, tailored for microbiome studies. The method accommodates both 
+    cross-sectional and longitudinal designs, providing finite effect estimates 
+    and uncertainty intervals that are naturally adjusted for multiple testing 
+    via hierarchical shrinkage. Posterior inference is performed via Markov 
+    chain Monte Carlo (MCMC) using 'cmdstanr' as the backend.
 License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
+Depends: 
+    R (>= 4.1.0)
 Imports: 
     cmdstanr,
-    stats
-Depends: 
-    R (>= 3.5)
-LazyData: true
+    SummarizedExperiment,
+    stats,
+    ggplot2,
+    TreeSummarizedExperiment
 Suggests: 
-    testthat (>= 3.0.0)
-Config/testthat/edition: 3
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+URL: https://github.com/jepelt/DiPPER
+BugReports: https://github.com/jepelt/DiPPER/issues
+Config/roxygen2/version: 8.0.0
+LazyData: true

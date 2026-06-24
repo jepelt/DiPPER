@@ -5,3 +5,11 @@
 .DS_Store
 .quarto
 .positai
+.Rproj.user/
+
+# DiPPER specific ignores
+data-raw/
+inst/stan/*.exe
+inst/stan/*.rds
+inst/stan/*.o
+inst/stan/*.hpp

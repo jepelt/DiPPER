@@ -4,7 +4,13 @@
 \alias{summary.dipper_fit}
 \title{Summarize the results from a DiPPER model fit}
 \usage{
-\method{summary}{dipper_fit}(object, prob = 0.95, scale = c("log_odds", "odds_ratio"), ...)
+\method{summary}{dipper_fit}(
+  object,
+  prob = 0.95,
+  scale = c("log_odds", "odds_ratio"),
+  original.scale = TRUE,
+  ...
+)
 }
 \arguments{
 \item{object}{A dipper_fit object returned by run_dipper.}
@@ -12,6 +18,10 @@
 \item{prob}{Probability mass for the credible interval (default 0.95).}
 
 \item{scale}{Character string, either "log_odds" or "odds_ratio".}
+
+\item{original.scale}{Logical. If TRUE (default), continuous covariates
+are back-transformed to their original scale. If FALSE, results are
+presented per one standard deviation increase.}
 
 \item{...}{Additional arguments (currently ignored).}
 }

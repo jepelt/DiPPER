@@ -2,67 +2,60 @@
 % Please edit documentation in R/prep_dipper_data.R
 \name{prep_dipper_data}
 \alias{prep_dipper_data}
-\title{Prepare data for the DiPPER model}
+\title{Prepare data for DiPPER}
 \usage{
 prep_dipper_data(
   tse = NULL,
-  meta = NULL,
-  abund_matrix = NULL,
   formula,
-  var_of_interest = NULL,
-  read_depth = TRUE,
-  assay_type = c("counts", "relabundance", "pa"),
-  assay_name = NULL,
-  tax_rank = NULL,
-  pa_threshold = 0,
-  min_present = 5,
-  min_absent = min_present,
-  standardize = TRUE,
-  center_dummies = TRUE
+  assay = NULL,
+  meta = NULL,
+  assay.type = NULL,
+  data.type = c("counts", "relabundance", "pa"),
+  var.of.interest = NULL,
+  read.depth = TRUE,
+  threshold = 0,
+  min.present = 5,
+  min.absent = min.present
 )
 }
 \arguments{
 \item{tse}{A TreeSummarizedExperiment object.}
 
-\item{meta}{A data.frame containing metadata (required if tse is NULL).}
-
-\item{abund_matrix}{A matrix containing counts, relative abundances, or
-presence/absence data (required if tse is NULL).}
-
 \item{formula}{Model formula.}
 
-\item{var_of_interest}{The variable of interest from the formula.
-If NULL, the first term of the formula is automatically used.}
+\item{assay}{A matrix containing counts, relative abundances, or
+presence/absence data (required if tse is NULL). Rows should be
+taxa/features, columns should be samples.}
 
-\item{read_depth}{Logical or character. If TRUE, calculates log10 read depth
-from counts. If character, uses the specified metadata column.}
+\item{meta}{A data.frame containing metadata (required if tse is NULL).}
 
-\item{assay_type}{Character. Type of the assay: "counts" (default),
+\item{assay.type}{Character. Name of the assay in the TSE object to use.
+Required if tse is provided.}
+
+\item{data.type}{Character. Type of the data: "counts" (default),
 "relabundance", or "pa" (presence/absence).}
 
-\item{assay_name}{Name of the assay in the TSE object to use. If NULL
-(default), it is automatically determined based on assay_type. Ignored if
-tse is NULL.}
+\item{var.of.interest}{The variable of interest from the formula.
+If NULL, the first term of the formula is automatically used.}
 
-\item{tax_rank}{A character string specifying the taxonomic rank to
-agglomerate by (e.g., "genus"). If NULL, no agglomeration is done.
-Ignored if tse is NULL.}
+\item{read.depth}{Logical or character. If TRUE, calculates log10 read depth
+from counts. If character, uses the specified metadata column.}
 
-\item{pa_threshold}{Numeric or function. Threshold for presence. If strictly
-between 0 and 1, relative abundances are used. If >= 1 or exactly 0,
-counts are used. If a function (e.g., mean), it is applied per taxon.
-Default is 0. Ignored if assay_type is "pa".}
+\item{threshold}{Numeric or function. Threshold for presence.
+If between 0 and 1, the threshold is based on relative abundance (e.g.,
+0.05 means that relative abundances > 0.05 are considered present).
+If whole number, the threshold is based on counts (e.g. 5 means that
+count > 5 is considered present).
+If a function (e.g. median), it is applied for the given assay for each
+feature. Default is 0. Ignored if data.type is "pa".}
 
-\item{min_present}{Minimum number or proportion of samples where a taxon
-must be present.}
+\item{min.present}{For taxon/feature filtering. Minimum number or proportion
+of samples where a taxon must be present. Default is 5.}
 
-\item{min_absent}{Minimum number or proportion of samples where a taxon
-must be absent. Default is min_present.}
-
-\item{standardize}{Logical. Standardize numeric covariates (mean=0, sd=1).}
-
-\item{center_dummies}{Logical. Mean-center all columns in design matrix.}
+\item{min.absent}{For taxon/feature filtering. Minimum number or proportion
+of samples where a taxon must be absent. Default is min.present.}
 }
 \description{
-Prepare data for the DiPPER model
+Prepare data for DiPPER
 }
+\keyword{internal}

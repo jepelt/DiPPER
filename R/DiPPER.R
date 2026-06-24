@@ -1,57 +1,87 @@
-#' Run the DiPPER model
+#' Run DiPPER
 #'
 #' This is a wrapper function that sequentially runs \code{prep_dipper_data}
 #' and \code{run_dipper}.
 #'
 #' @inheritParams prep_dipper_data
 #' @inheritParams run_dipper
-#' @param ... Additional arguments passed directly to \code{run_dipper}.
+#' @param ... Additional arguments passed directly to \code{run_dipper}
+#'   (e.g., cmdstanr specific arguments).
 #'
-#' @return The output of the \code{run_dipper} function.
+#' @return A list object of class "dipper_fit".
 #' @export
-DiPPER <- function(tse = NULL,
-                   meta = NULL,
-                   abund_matrix = NULL,
+dipper <- function(tse = NULL,
                    formula,
-                   var_of_interest = NULL,
-                   read_depth = TRUE,
-                   symmetric = F,
-                   assay_type = c("counts", "relabundance", "pa"),
-                   assay_name = NULL,
-                   tax_rank = NULL,
-                   pa_threshold = 0,
-                   min_present = 5,
-                   min_absent = min_present,
-                   iter_sampling = 1000,
+                   assay = NULL,
+                   meta = NULL,
+                   assay.type = NULL,
+                   data.type = c("counts", "relabundance", "pa"),
+                   var.of.interest = NULL,
+                   read.depth = TRUE,
+                   symmetric = FALSE,
+                   threshold = 0,
+                   min.present = 5,
+                   min.absent = min.present,
+                   iter.sampling = 1000,
+                   iter.warmup = iter.sampling,
+                   chains = 4,
                    cores = 4,
+                   adapt.delta = 0.8,
+                   max.treedepth = 10,
+                   run.diagnostics = TRUE,
+                   diagnostics.level = c("basic", "full"),
                    seed = 1,
+                   print.progress = 200,
+                   prior.alpha.sd = 4.0,
+                   prior.tau.sd = 1.0,
+                   prior.nu.sd = 0.05,
+                   prior.cov.sd = 1.0,
+                   prior.reads.mean = 2.0,
+                   prior.reads.sd = 2.0,
+                   prior.sigma.subj = 1.0,
                    ...) {
 
-    # Prepare the data with standard settings for covariates
+    # 0. Validate and match arguments ------------------------------------------
+    diagnostics.level <- match.arg(diagnostics.level)
+    data.type <- match.arg(data.type)
+
+
+    # 1. Prepare the data ------------------------------------------------------
     prepared_data <- prep_dipper_data(
         tse = tse,
-        meta = meta,
-        abund_matrix = abund_matrix,
         formula = formula,
-        var_of_interest = var_of_interest,
-        read_depth = read_depth,
-        assay_type = assay_type,
-        assay_name = assay_name,
-        tax_rank = tax_rank,
-        pa_threshold = pa_threshold,
-        min_present = min_present,
-        min_absent = min_absent,
-        standardize = TRUE,
-        center_dummies = TRUE
+        assay = assay,
+        meta = meta,
+        assay.type = assay.type,
+        data.type = data.type,
+        var.of.interest = var.of.interest,
+        read.depth = read.depth,
+        threshold = threshold,
+        min.present = min.present,
+        min.absent = min.absent
     )
 
-    # Run the core model
+    # 2. Run the core model ----------------------------------------------------
     result <- run_dipper(
-        prep_data = prepared_data,
+        prep.data = prepared_data,
         symmetric = symmetric,
-        iter_sampling = iter_sampling,
+        iter.sampling = iter.sampling,
+        iter.warmup = iter.warmup,
+        chains = chains,
         cores = cores,
-        seed = 1,
+        adapt.delta = adapt.delta,
+        max.treedepth = max.treedepth,
+        run.diagnostics = run.diagnostics,
+        diagnostics.level = diagnostics.level,
+        seed = seed,
+        print.progress = print.progress,
+        prior.alpha.sd = prior.alpha.sd,
+        prior.tau.sd = prior.tau.sd,
+        prior.nu.sd = prior.nu.sd,
+        prior.cov.sd = prior.cov.sd,
+        prior.reads.mean = prior.reads.mean,
+        prior.reads.sd = prior.reads.sd,
+        prior.sigma.subj = prior.sigma.subj,
         ...
     )
 

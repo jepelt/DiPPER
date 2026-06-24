@@ -5,65 +5,87 @@
 \title{Run the DiPPER model using cmdstanr}
 \usage{
 run_dipper(
-  prep_data,
+  prep.data,
   symmetric = FALSE,
-  iter_sampling = 1000,
-  iter_warmup = iter_sampling,
-  run_diagnostics = TRUE,
+  iter.sampling = 1000,
+  iter.warmup = iter.sampling,
   chains = 4,
   cores = 4,
   seed = 1,
-  adapt_delta = 0.8,
-  max_treedepth = 10,
-  prior_nu_sd = 0.05,
-  prior_tau_sd = 1,
-  prior_alpha_sd = 4,
-  prior_cov_sd = 1,
-  prior_reads_mean = 2,
-  prior_reads_sd = 2,
-  print_progress = 200
+  adapt.delta = 0.8,
+  max.treedepth = 10,
+  run.diagnostics = TRUE,
+  diagnostics.level = c("basic", "full"),
+  print.progress = 200,
+  prior.alpha.sd = 4,
+  prior.tau.sd = 1,
+  prior.nu.sd = 0.05,
+  prior.cov.sd = 1,
+  prior.reads.mean = 2,
+  prior.reads.sd = 2,
+  prior.sigma.subj = 1,
+  ...
 )
 }
 \arguments{
-\item{prep_data}{The list returned by \code{prep_dipper_data}.}
+\item{prep.data}{The list returned by \code{prep_dipper_data}.}
 
 \item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
-is used for the differential prevelance parameters of interest. If FALSE
+is used for the differential prevalence parameters of interest. If FALSE
 (default), the prior is allowed to be asymmetric.}
 
-\item{iter_sampling}{Number of post-warmup MCMC iterations per chain.}
+\item{iter.sampling}{Number of post-warmup MCMC iterations per chain.
+Default is 1000.}
 
-\item{iter_warmup}{Number of warmup MCMC iterations per chain. Defaults
-to iter_sampling.}
+\item{iter.warmup}{Number of warmup MCMC iterations per chain.
+Defaults to iter.sampling.}
 
-\item{run_diagnostics}{Logical. Whether to run convergence diagnostics.
-Default is TRUE.}
+\item{chains}{Number of MCMC chains. Default is 4.}
 
-\item{chains}{Number of MCMC chains.}
+\item{cores}{Number of CPU cores to use. Default is 4.}
 
-\item{cores}{Number of CPU cores to use.}
+\item{seed}{Random seed for reproducibility. Default is 1.}
 
-\item{seed}{Random seed for reproducibility.}
+\item{adapt.delta}{Target average acceptance probability. Default is 0.8.}
 
-\item{adapt_delta}{Target average acceptance probability (default 0.8).}
+\item{max.treedepth}{Maximum depth of the trees. Default is 10.}
 
-\item{max_treedepth}{Maximum depth of the trees (default 10).}
+\item{run.diagnostics}{Logical. Whether to run convergence diagnostics
+after sampling. Default is TRUE.}
 
-\item{prior_nu_sd}{Prior standard dev for nu (ignored if symmetric).}
+\item{diagnostics.level}{Character. Level of MCMC diagnostics to run.
+"basic" (default) checks main parameters (alpha, beta, covariates,
+hyperparameters).
+"full" checks all parameters, including latent and auxiliary variables.}
 
-\item{prior_tau_sd}{Prior standard deviation for tau.}
-
-\item{prior_alpha_sd}{Prior standard deviation for alpha (intercept).}
-
-\item{prior_cov_sd}{Default prior standard dev for covariates.}
-
-\item{prior_reads_mean}{Prior mean for the read depth covariate.}
-
-\item{prior_reads_sd}{Prior standard dev for the read depth covariate.}
-
-\item{print_progress}{How often to print MCMC progress. Set to 0 or
+\item{print.progress}{How often to print MCMC progress. Set to 0 or
 FALSE to disable. Default is 200.}
+
+\item{prior.alpha.sd}{Prior standard deviation for alpha (fixed intercept
+for centered variables). Default is 4.0.}
+
+\item{prior.tau.sd}{Prior standard deviation for tau (global scale of the
+Symmetric/Asymmetric Laplace prior). Default is 1.0.}
+
+\item{prior.nu.sd}{Prior standard deviation for nu (asymmetry parameter).
+Ignored if symmetric = TRUE. Default is 0.05.}
+
+\item{prior.cov.sd}{Default prior standard deviation for covariates.
+Default is 1.0.}
+
+\item{prior.reads.mean}{Prior mean for the read depth covariate.
+Default is 2.0.}
+
+\item{prior.reads.sd}{Prior standard deviation for the read depth covariate.
+Default is 2.0.}
+
+\item{prior.sigma.subj}{Prior standard deviation for the half-normal prior
+distribution of the taxon-specific random intercept standard deviations.
+Default is 1.0.}
+
+\item{...}{Additional arguments passed to \code{cmdstan_model$sample()}.}
 }
 \description{
 Run the DiPPER model using cmdstanr
 }
+\keyword{internal}
