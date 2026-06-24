@@ -4,10 +4,10 @@
 #' @param symmetric Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
 #'   is used for the differential prevalence parameters of interest. If FALSE
 #'   (default), the prior is allowed to be asymmetric.
-#' @param iter.sampling Number of post-warmup MCMC iterations per chain.
-#'   Default is 1000.
-#' @param iter.warmup Number of warmup MCMC iterations per chain.
-#'   Defaults to iter.sampling.
+#' @param niter Total number of MCMC iterations per chain (including warmup).
+#'   Default is 2000.
+#' @param warmup Number of warmup MCMC iterations per chain.
+#'   Defaults to floor(niter / 2).
 #' @param chains Number of MCMC chains. Default is 4.
 #' @param cores Number of CPU cores to use. Default is 4.
 #' @param seed Random seed for reproducibility. Default is 1.
@@ -41,8 +41,8 @@
 #' @keywords internal
 run_dipper <- function(prep.data,
                        symmetric = FALSE,
-                       iter.sampling = 1000,
-                       iter.warmup = iter.sampling,
+                       niter = 2000,
+                       warmup = floor(niter / 2),
                        chains = 4,
                        cores = 4,
                        seed = 1,
@@ -61,6 +61,7 @@ run_dipper <- function(prep.data,
                        ...) {
 
     diagnostics.level <- match.arg(diagnostics.level)
+
 
     # 1. Dependency and input validation ---------------------------------------
     if (!requireNamespace("cmdstanr", quietly = TRUE)) {
@@ -161,6 +162,13 @@ run_dipper <- function(prep.data,
 
 
     # 7. Compile and run sampling ----------------------------------------------
+
+    # Calculate actual sampling iterations for cmdstanr
+    actual_sampling <- niter - warmup
+    if (actual_sampling <= 0) {
+        stop("'niter' must be strictly greater than 'warmup'.")
+    }
+
     message("Preparing Stan model...")
 
     mod <- cmdstanr::cmdstan_model(stan_file, compile = TRUE, quiet = TRUE)
@@ -178,8 +186,8 @@ run_dipper <- function(prep.data,
         seed = seed,
         chains = chains,
         parallel_chains = cores,
-        iter_warmup = iter.warmup,
-        iter_sampling = iter.sampling,
+        iter_warmup = warmup,
+        iter_sampling = actual_sampling,
         adapt_delta = adapt.delta,
         max_treedepth = max.treedepth,
         refresh = refresh_val,
@@ -219,7 +227,7 @@ run_dipper <- function(prep.data,
         min_ess_tail <- suppressWarnings(min(summ$ess_tail, na.rm = TRUE))
 
         warn_msg <- c()
-        rec_iter <- iter.sampling * 2
+        rec_iter <- niter * 2
 
         if (divs > 0) {
             warn_msg <- c(warn_msg, sprintf(
@@ -228,18 +236,18 @@ run_dipper <- function(prep.data,
         }
         if (is.finite(max_rhat) && max_rhat >= 1.01) {
             warn_msg <- c(warn_msg, sprintf(
-                "Max R-hat is %.3f. Try iter.sampling = %d.", max_rhat, rec_iter
+                "Max R-hat is %.3f. Try niter = %d.", max_rhat, rec_iter
             ))
         }
         if (is.finite(min_ess_bulk) && min_ess_bulk < 400) {
             warn_msg <- c(warn_msg, sprintf(
-                "Min bulk ESS is %.1f. Try iter.sampling = %d.",
+                "Min bulk ESS is %.1f. Try niter = %d.",
                 min_ess_bulk, rec_iter
             ))
         }
         if (is.finite(min_ess_tail) && min_ess_tail < 400) {
             warn_msg <- c(warn_msg, sprintf(
-                "Min tail ESS is %.1f. Try iter.sampling = %d.",
+                "Min tail ESS is %.1f. Try niter = %d.",
                 min_ess_tail, rec_iter
             ))
         }

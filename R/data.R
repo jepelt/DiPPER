@@ -44,4 +44,4 @@
 #' @source Vatanen T. et al. (2016). Variation in Microbiome LPS Immunogenicity
 #' Contributes to Autoimmunity in Humans. \emph{Cell},
 #' 165(4):842-853; https://doi.org/10.1016/j.cell.2016.04.007.
-"tse_vatanen"
+"VatanenT_2016_subset"

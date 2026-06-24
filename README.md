@@ -82,7 +82,8 @@ data("tse_hintikka")
 fit <- dipper(
     tse = tse_hintikka,
     formula = ~ Fat + XOS,
-    assay.type = "counts"
+    assay.type = "counts",
+    niter = 400 # This needs to be increased in practice!
 )
 
 # Extract summarized results as a data.frame
@@ -113,14 +114,23 @@ library(DiPPER)
 
 # Load dataset, provided as a SummarizedExperiment object, and agglomerated to 
 # genus level.
-data("tse_vatanen")
+data("VatanenT_2016_subset")
 
 # The metadata includes variables subject_id (indicating infant), age (in
 # months), antibiotics (use of antibiotics: yes/no) and gender (male/female).
-tse_vatanen |>
+VatanenT_2016_subset |>
     SummarizedExperiment::colData() |>
-    as.data.frame() |>
     head()
+    
+## DataFrame with 6 rows and 4 columns
+##        subject_id antibiotics       age   gender
+##          <factor>    <factor> <numeric> <factor>
+## G80490    E002338         no    1.90554   female
+## G80538    E002338         no    4.00821   female
+## G80541    E002338         no    9.98768   female
+## G80498    E002473         no    1.37988   female
+## G80455    E002473         no    6.99795   female
+## G80621    E002681         yes   7.06366   female
 
 # Run DiPPER.
 # By putting age as the first variable of the formula it is automatically set as
@@ -133,12 +143,12 @@ tse_vatanen |>
 # assay.type = "relative_abundance". Moreover, as we cannot now control for the
 # sequencing depth, we must set read.depth = FALSE.
 fit2 <- dipper(
-    tse = tse_vatanen,
+    tse = VatanenT_2016_subset,
     formula = ~ age + antibiotics + gender + (1 | subject_id),
     assay.type = "relative_abundance",
     data.type = "relabundance",
     read.depth = FALSE,
-    iter.sampling = 500 # Set to a lower value to speed up the example
+    niter = 400 # This needs to be increased in practice!
 )
 
 # Extract the results for age 
