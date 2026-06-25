@@ -8,7 +8,7 @@ run_dipper(
   prep.data,
   symmetric = FALSE,
   niter = 2000,
-  warmup = floor(niter/2),
+  niter.warmup = floor(niter/2),
   chains = 4,
   cores = 4,
   seed = 1,
@@ -37,7 +37,7 @@ is used for the differential prevalence parameters of interest. If FALSE
 \item{niter}{Total number of MCMC iterations per chain (including warmup).
 Default is 2000.}
 
-\item{warmup}{Number of warmup MCMC iterations per chain.
+\item{niter.warmup}{Number of warmup MCMC iterations per chain.
 Defaults to floor(niter / 2).}
 
 \item{chains}{Number of MCMC chains. Default is 4.}

@@ -18,7 +18,7 @@ dipper(
   min.present = 5,
   min.absent = min.present,
   niter = 2000,
-  warmup = floor(niter/2),
+  niter.warmup = floor(niter/2),
   chains = 4,
   cores = 4,
   adapt.delta = 0.8,
@@ -81,7 +81,7 @@ of samples where a taxon must be absent. Default is min.present.}
 \item{niter}{Total number of MCMC iterations per chain (including warmup).
 Default is 2000.}
 
-\item{warmup}{Number of warmup MCMC iterations per chain.
+\item{niter.warmup}{Number of warmup MCMC iterations per chain.
 Defaults to floor(niter / 2).}
 
 \item{chains}{Number of MCMC chains. Default is 4.}

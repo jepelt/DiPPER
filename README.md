@@ -38,7 +38,7 @@ BiocManager::install(c("SummarizedExperiment", "TreeSummarizedExperiment"))
 
 # 2. Install cmdstanr
 install.packages("cmdstanr",
-                 repos = c("[https://stan-dev.r-universe.dev/](https://stan-dev.r-universe.dev/)",
+                 repos = c("https://stan-dev.r-universe.dev/",
                            getOption("repos")))
 
 # Set up the C++ toolchain (Windows users may need Rtools)
@@ -122,7 +122,6 @@ VatanenT_2016_subset |>
     SummarizedExperiment::colData() |>
     head()
     
-## DataFrame with 6 rows and 4 columns
 ##        subject_id antibiotics       age   gender
 ##          <factor>    <factor> <numeric> <factor>
 ## G80490    E002338         no    1.90554   female
@@ -131,12 +130,14 @@ VatanenT_2016_subset |>
 ## G80498    E002473         no    1.37988   female
 ## G80455    E002473         no    6.99795   female
 ## G80621    E002681         yes   7.06366   female
+## ...       ...             ...   ...       ...
 
 # Run DiPPER.
 # By putting age as the first variable of the formula it is automatically set as
-# the variable of interest. Gender and antibiotics use are controlled for.
-# Lastly, the longitudinality of the data is accounted for by specifying
-# subject_id as a random intercept term by writing (1 | subject_id).
+# the variable of interest. (Note that we assume a linear age association here
+# which may not be realistic in practice) Gender and antibiotics use are
+# controlled for. Lastly, the longitudinality of the data is accounted for by
+# specifying subject_id as a random intercept term by writing (1 | subject_id).
 
 # Note that because the abundance data are proportions, we must specify
 # data.type = "relabundance" in addition to providing the assay name

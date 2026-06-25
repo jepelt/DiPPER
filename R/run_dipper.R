@@ -6,7 +6,7 @@
 #'   (default), the prior is allowed to be asymmetric.
 #' @param niter Total number of MCMC iterations per chain (including warmup).
 #'   Default is 2000.
-#' @param warmup Number of warmup MCMC iterations per chain.
+#' @param niter.warmup Number of warmup MCMC iterations per chain.
 #'   Defaults to floor(niter / 2).
 #' @param chains Number of MCMC chains. Default is 4.
 #' @param cores Number of CPU cores to use. Default is 4.
@@ -42,7 +42,7 @@
 run_dipper <- function(prep.data,
                        symmetric = FALSE,
                        niter = 2000,
-                       warmup = floor(niter / 2),
+                       niter.warmup = floor(niter / 2),
                        chains = 4,
                        cores = 4,
                        seed = 1,
@@ -164,9 +164,9 @@ run_dipper <- function(prep.data,
     # 7. Compile and run sampling ----------------------------------------------
 
     # Calculate actual sampling iterations for cmdstanr
-    actual_sampling <- niter - warmup
+    actual_sampling <- niter - niter.warmup
     if (actual_sampling <= 0) {
-        stop("'niter' must be strictly greater than 'warmup'.")
+        stop("'niter' must be strictly greater than 'niter.warmup'.")
     }
 
     message("Preparing Stan model...")
@@ -186,7 +186,7 @@ run_dipper <- function(prep.data,
         seed = seed,
         chains = chains,
         parallel_chains = cores,
-        iter_warmup = warmup,
+        iter_warmup = niter.warmup,
         iter_sampling = actual_sampling,
         adapt_delta = adapt.delta,
         max_treedepth = max.treedepth,
