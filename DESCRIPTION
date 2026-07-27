@@ -10,7 +10,7 @@ Authors@R: c(
     person(given = "Leo",
            family = "Lahti",
            role = "aut",
-	   email = "leo.lahti@utu.fi",
+           email = "leo.lahti@utu.fi",
            comment = c(ORCID = "0000-0001-5537-637X"))
   )
 Description: Implements a Bayesian hierarchical model for differential prevalence 
@@ -34,6 +34,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
+Remotes: 
+    stan-dev/cmdstanr
 URL: https://github.com/jepelt/DiPPER
 BugReports: https://github.com/jepelt/DiPPER/issues
 Config/roxygen2/version: 8.0.0
