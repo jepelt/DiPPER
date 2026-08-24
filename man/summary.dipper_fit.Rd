@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary.dipper_fit.R
 \name{summary.dipper_fit}
 \alias{summary.dipper_fit}
-\title{Summarize the results from a DiPPER model fit}
+\title{Summarize DiPPER results for the variable of interest}
 \usage{
 \method{summary}{dipper_fit}(
   object,
@@ -13,21 +13,70 @@
 )
 }
 \arguments{
-\item{object}{A dipper_fit object returned by run_dipper.}
+\item{object}{A \code{dipper_fit} object returned by \code{\link{dipper}}.}
 
-\item{prob}{Probability mass for the credible interval (default 0.95).}
+\item{prob}{Numeric. Probability mass for the credible interval (analogous to
+confidence level in frequentist statistics). Default is 0.95 (i.e.,
+95 percent credible intervals are produced).}
 
-\item{scale}{Character string, either "log_odds" or "odds_ratio".}
+\item{scale}{Character string indicating the scale of the estimates. Either
+\code{"log_odds"} (default) or \code{"odds_ratio"}.}
 
-\item{original.scale}{Logical. If TRUE (default), continuous covariates
-are back-transformed to their original scale. If FALSE, results are
-presented per one standard deviation increase.}
+\item{original.scale}{Logical. If \code{TRUE} (default), continuous
+covariates are back-transformed to their original scale. If \code{FALSE},
+results are presented per one standard deviation increase. Ignored for
+categorical variables.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-A data.frame containing the summarized results for each taxon.
+A \code{data.frame} containing the summarized results for each
+taxon, sorted by \code{pseudo_q} (smallest to largest). The columns are:
+\describe{
+\item{taxon}{Name of the taxonomic feature.}
+\item{log_or / odds_ratio}{Median posterior estimate on the chosen scale.}
+\item{lwr}{Lower bound of the credible interval.}
+\item{upr}{Upper bound of the credible interval.}
+\item{significant}{Logical. \code{TRUE} if the credible interval on the
+log-odds scale does not include zero (or on the odds ratio scale does not
+include one).}
+\item{pseudo_q}{Bayesian pseudo q-value.}
+}
 }
 \description{
-Summarize the results from a DiPPER model fit
+This function computes and summarizes the posterior quantities (differential
+prevalence estimate, credible interval, pseudo q-value) for the variable of
+interest for each taxonomic feature.
+}
+\details{
+The function computes the median posterior estimates and credible interval
+boundaries (based on the \code{(1 - prob) / 2} and \code{1 - (1 - prob) / 2}
+posterior quantiles) from the posterior draws of the differential prevalence
+parameters (beta) of the variable of interest.
+
+Note that as the boundaries of the credible intervals depend on the
+\code{prob} level, so does the \code{significant} logical flag.
+
+\code{max_prob} is the maximum of the posterior probabilities that the
+parameter is strictly positive or strictly negative. Consequently, it
+indicates the highest "significance level" at which the result would be
+considered "statistically significant" (i.e., the credible interval
+excluding zero). It thus bears some resemblance to a multiplicity-adjusted
+two-sided \emph{p}-value (\emph{q}-value), but it does not have any strict
+statistical interpretation. Due to the finite number of posterior draws,
+zero values are replaced with \code{0.5 * (1 / n_draws)}.
+}
+\examples{
+library(DiPPER)
+
+# Load pre-run model fit for the example dataset (tse_hintikka)
+data("fit_example")
+
+# Summarize on log-odds scale with default 95 percent interval
+res_log <- summary(fit_example)
+head(res_log)
+
+# Summarize on odds ratio scale with 90 percent interval
+res_or <- summary(fit_example, prob = 0.90, scale = "odds_ratio")
+head(res_or)
 }

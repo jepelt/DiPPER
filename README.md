@@ -26,34 +26,38 @@ A pre-print of the paper introducing DiPPER can be found
 
 ## Installation
 
-DiPPER relies on packages from Bioconductor (for handling microbiome data) and
-Stan (for Bayesian inference). Please ensure these are installed first:
+**1. Install the CmdStan backend**
+
+As DiPPER relies on CmdStan software for Bayesian inference you first need to
+install the `cmdstanr` package and configure the C++ toolchain.
 
 ```r
-# 1. Install Bioconductor dependencies
-if (!requireNamespace("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
-}
-BiocManager::install(c("SummarizedExperiment", "TreeSummarizedExperiment"))
-
-# 2. Install cmdstanr
+# Install cmdstanr from the official stan-dev repository
 install.packages("cmdstanr",
-                 repos = c("https://stan-dev.r-universe.dev/",
+                 repos = c("https://stan-dev.r-universe.dev",
                            getOption("repos")))
 
-# Set up the C++ toolchain (Windows users may need Rtools)
+# Set up the C++ toolchain (Windows users may be prompted to install Rtools)
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
-# Install the Stan backend (only needs to be done once)
+# Install the actual CmdStan backend (only needs to be done once)
 cmdstanr::install_cmdstan()
 ```
 
-Once the dependencies are ready, you can install the development version of
-DiPPER from GitHub using:
+**2. Install DiPPER**
+
+Once CmdStan is ready, you can install the development version of DiPPER. 
+Using `BiocManager` for the installation automatically installs also all
+required Bioconductor dependencies.
 
 ```r
-# install.packages("remotes")
-remotes::install_github("jepelt/DiPPER")
+# Install BiocManager if it is not already installed
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+
+# Install DiPPER from GitHub
+BiocManager::install("jepelt/DiPPER")
 ```
 
 ## Example Usage
@@ -93,7 +97,7 @@ res <- summary(fit)
 # It can be seen how, for instance, Sellimonas genus has higher prevalence in
 # High fat group (vs. Low fat group), while Faecalibaculum genus has higher 
 # prevalence in Low fat group.
-plot(fit, show.taxa = "significant")
+plot(fit)
 ```
 
 <img src="man/figures/plot_hintikka.png" width="600" alt="Forest plot of the Hintikka dataset">
@@ -103,8 +107,8 @@ plot(fit, show.taxa = "significant")
 This example demonstrates how to run DiPPER on repeated measures data by
 including a random intercept for the subject. We use a built-in subset of
 the [Vatanen et al. (2016)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/)
-dataset. The dataset includes 1-3 gut microbiome samples from 40 infants 
-during their first year of life.
+dataset. The dataset includes gut microbiome samples from 79 infants at one 
+or two time points (1.5 and/or 7 months of age).
 
 The abundance data are provided as relative abundances (proportions), and
 thus we cannot control for sequencing depth now.
@@ -116,48 +120,48 @@ library(DiPPER)
 # genus level.
 data("VatanenT_2016_subset")
 
-# The metadata includes variables subject_id (indicating infant), age (in
+# The metadata includes variables subject_id (indicating infant), age_point (in
 # months), antibiotics (use of antibiotics: yes/no) and gender (male/female).
 VatanenT_2016_subset |>
     SummarizedExperiment::colData() |>
     head()
     
-##        subject_id antibiotics       age   gender
-##          <factor>    <factor> <numeric> <factor>
-## G80490    E002338         no    1.90554   female
-## G80538    E002338         no    4.00821   female
-## G80541    E002338         no    9.98768   female
-## G80498    E002473         no    1.37988   female
-## G80455    E002473         no    6.99795   female
-## G80621    E002681         yes   7.06366   female
-## ...       ...             ...   ...       ...
+## DataFrame with 6 rows and 4 columns
+##        subject_id antibiotics  age_point   gender
+##          <factor>    <factor>   <factor> <factor>
+## G80490    E002338         no  1.5 months   female
+## G80455    E002473         no  7 months     female
+## G80498    E002473         no  1.5 months   female
+## G80621    E002681         yes 7 months     female
+## G80522    E004781         no  1.5 months   female
+## G80574    E004781         yes 7 months     female
 
 # Run DiPPER.
-# By putting age as the first variable of the formula it is automatically set as
-# the variable of interest. (Note that we assume a linear age association here
-# which may not be realistic in practice) Gender and antibiotics use are
-# controlled for. Lastly, the longitudinality of the data is accounted for by
-# specifying subject_id as a random intercept term by writing (1 | subject_id).
+# By putting age_point as the first variable of the formula it is automatically 
+# set as the variable of interest. Gender and antibiotics use are controlled 
+# for. Lastly, the longitudinality of the data is accounted for by specifying 
+# subject_id as a random intercept term by writing (1 | subject_id).
 
 # Note that because the abundance data are proportions, we must specify
 # data.type = "relabundance" in addition to providing the assay name
 # assay.type = "relative_abundance". Moreover, as we cannot now control for the
 # sequencing depth, we must set read.depth = FALSE.
-fit2 <- dipper(
+fit_long <- dipper(
     tse = VatanenT_2016_subset,
-    formula = ~ age + antibiotics + gender + (1 | subject_id),
+    formula = ~ age_point + antibiotics + gender + (1 | subject_id),
     assay.type = "relative_abundance",
     data.type = "relabundance",
     read.depth = FALSE,
     niter = 400 # This needs to be increased in practice!
 )
 
-# Extract the results for age 
-res2 <- summary(fit2)
+# Extract the results for age_point 
+res_long <- summary(fit_long)
 
 # Create a forest plot (showing 'significant' taxa only)
-# As expected, the prevalence of several taxa increases with infant age.
-plot(fit2, show.taxa = "significant")
+# As expected, the prevalence of several taxa increases with infant age,
+# although the prevalence of Staphylococcus decreases.
+plot(fit_long)
 ```
 
 <img src="man/figures/plot_vatanen.png" width="600" alt="Forest plot of the Vatanen dataset">

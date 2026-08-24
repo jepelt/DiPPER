@@ -1,47 +1,56 @@
-#' Rat microbiome data: low/high-fat diet and XOS supplementation
+#' Gut microbiome dataset from Hintikka et al. (2021)
 #'
-#' A \code{TreeSummarizedExperiment} object containing microbiome data from a
-#' rat experiment studying the effects of a high-fat diet and prebiotic
-#' xylo-oligosaccharide (XOS) supplementation.
+#' A \code{TreeSummarizedExperiment} object containing a subset of gut
+#' microbiome data from an experiment studying the effects of a high-fat
+#' diet and xylo-oligosaccharide (XOS) supplementation on rats (N = 20 + 20).
+#' The abundance data are sequencing counts and they have been agglomerated
+#' to the genus level.
 #'
-#' The dataset has been agglomerated to the Genus level using
-#' \code{mia::agglomerateByRank()}.
-#'
-#' @format A \code{TreeSummarizedExperiment} object with 40 samples (rats).
+#' @format A \code{TreeSummarizedExperiment} object.
 #' \describe{
-#'   \item{colData}{Contains experimental metadata. The included variables are
-#'   the diet group (\code{Fat}: High/Low) and supplementation (\code{XOS}:
-#'   No / Yes).}
-#'   \item{assays}{Contains the \code{counts} assay with microbial abundances.}
+#'   \item{assay}{Contains the \code{counts} matrix.}
+#'   \item{colData}{Contains the sample metadata, including \code{Fat}
+#'   (diet group, factor with levels Low and High) and \code{XOS}
+#'   (xylo-oligosaccharide supplementation).}
 #' }
-#' @source Hintikka L. et al. (2021). Xylo-Oligosaccharides in Prevention of
-#' Hepatic Steatosis and Adipose Tissue Inflammation: Associating Taxonomic and
-#' Metabolomic Patterns in Fecal Microbiomes with Biclustering.
-#' \emph{International Journal of Environmental Research and Public Health},
-#' 18(8):4049; https://doi.org/10.3390/ijerph18084049.
+#' @source \url{https://www.mdpi.com/1660-4601/18/8/4049}
 "tse_hintikka"
 
-#' Longitudinal infant/child gut microbiome data
+#' Example model fit object for DiPPER
 #'
-#' A \code{TreeSummarizedExperiment} object containing a lightweight subset
-#' (40 subjects, 1-3 measurements per subject) of the Vatanen et al. (2016)
-#' longitudinal infant/child microbiome dataset. This dataset tracks the
-#' maturation of the infant intestinal microbiome over the first
-#' year of life.
+#' A pre-calculated \code{dipper_fit} object to be used in examples and
+#' vignettes to avoid long MCMC sampling times during package checks.
 #'
-#' The dataset has been agglomerated to
-#' the Genus level using \code{mia::agglomerateByRank()}. The assay contains
-#' relative abundances expressed as proportions (0-1).
-#'
-#' @format A \code{TreeSummarizedExperiment} object with 76 samples.
+#' @format A list of class \code{dipper_fit} containing:
 #' \describe{
-#'   \item{colData}{Contains experimental metadata. Key variables include
-#'   \code{subject_id} (unique individual identifier), \code{age}
-#'   (in months), \code{antibiotics} (no/yes), and \code{gender}
-#'   (male/female).}
-#'   \item{assays}{Contains the \code{relative_abundance} assay.}
+#'   \item{stanfit}{The \code{CmdStanMCMC} object returned by CmdStanR.}
+#'   \item{dipper_data}{A list containing the prepared data passed to Stan.}
+#'   \item{symmetric}{Logical indicating if a symmetric Laplace prior for
+#'   differential prevalence parameters was used.}
 #' }
-#' @source Vatanen T. et al. (2016). Variation in Microbiome LPS Immunogenicity
-#' Contributes to Autoimmunity in Humans. \emph{Cell},
-#' 165(4):842-853; https://doi.org/10.1016/j.cell.2016.04.007.
+#'
+#' @source Generated using the \code{tse_hintikka} dataset with
+#'   \code{niter = 400} and \code{chains = 1}.
+#'
+#' @usage data("fit_example")
+"fit_example"
+
+#' Longitudinal gut microbiome dataset from Vatanen et al. (2016)
+#'
+#' A \code{TreeSummarizedExperiment} object containing a longitudinal subset of
+#' infant gut microbiome data from Vatanen et al. (2016). The data consists of
+#' 79 infants with measurements at 1.5 and/or 7 months of age. The abundance
+#' data are relative abundances (proportions) and they have been agglomerated
+#' to the genus level.
+#'
+#' @format A \code{TreeSummarizedExperiment} object.
+#' \describe{
+#'   \item{assay}{Contains the \code{relative_abundance} matrix (proportions).}
+#'   \item{colData}{Contains the sample metadata: \code{subject_id} (factor),
+#'   \code{antibiotics} (factor: no, yes), \code{age_point} (factor:
+#'   1.5 months, 7 months), and \code{gender} (factor: male, female).}
+#'   \item{rowTree}{Contains the phylogenetic tree.}
+#' }
+#' @source Data obtained via the \code{curatedMetagenomicData} R package.
+#' Original study: \url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/}
 "VatanenT_2016_subset"

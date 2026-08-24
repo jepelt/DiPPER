@@ -19,6 +19,9 @@
 #'   "basic" (default) checks main parameters (alpha, beta, covariates,
 #'   hyperparameters).
 #'   "full" checks all parameters, including latent and auxiliary variables.
+#' @param keep.pars Character vector of Stan parameter names to retain in the
+#'   returned object, or NULL to retain all of them. Default is
+#'   "beta", i.e. only the samples for the parameters of interest are retained.
 #' @param print.progress How often to print MCMC progress. Set to 0 or
 #'   FALSE to disable. Default is 200.
 #' @param prior.alpha.sd Prior standard deviation for alpha (fixed intercept
@@ -50,6 +53,7 @@ run_dipper <- function(prep.data,
                        max.treedepth = 10,
                        run.diagnostics = TRUE,
                        diagnostics.level = c("basic", "full"),
+                       keep.pars = "beta",
                        print.progress = 200,
                        prior.alpha.sd = 4.0,
                        prior.tau.sd = 1.0,
@@ -71,6 +75,10 @@ run_dipper <- function(prep.data,
     req_names <- c("y", "X", "N", "K", "P", "design_matrix_cols")
     if (!all(req_names %in% names(prep.data))) {
         stop("Invalid prep.data. Generate using prep_dipper_data().")
+    }
+
+    if (!is.null(keep.pars) && !is.character(keep.pars)) {
+        stop("'keep.pars' must be a character vector or NULL.")
     }
 
 
@@ -135,15 +143,7 @@ run_dipper <- function(prep.data,
     }
 
 
-    # 5. Load Stan file --------------------------------------------------------
-    stan_file <- system.file("stan", file_name, package = "DiPPER")
-
-    if (stan_file == "") {
-        stop(sprintf("Stan file '%s' not found in 'inst/stan/'.", file_name))
-    }
-
-
-    # 6. Configure MCMC printing -----------------------------------------------
+    # 5. Configure MCMC printing -----------------------------------------------
     if (is.logical(print.progress)) {
         if (print.progress) {
             refresh_val <- 200L
@@ -161,7 +161,7 @@ run_dipper <- function(prep.data,
     }
 
 
-    # 7. Compile and run sampling ----------------------------------------------
+    # 6. Compile and run sampling ----------------------------------------------
 
     # Calculate actual sampling iterations for cmdstanr
     actual_sampling <- niter - niter.warmup
@@ -171,7 +171,10 @@ run_dipper <- function(prep.data,
 
     message("Preparing Stan model...")
 
-    mod <- cmdstanr::cmdstan_model(stan_file, compile = TRUE, quiet = TRUE)
+    mod <- instantiate::stan_package_model(name = sub("\\.stan$",
+                                                      "",
+                                                      file_name),
+                                           package = "DiPPER")
 
     message(sprintf(
         "Starting sampling with %d chains on %d cores...", chains, cores
@@ -198,7 +201,7 @@ run_dipper <- function(prep.data,
     )
 
 
-    # 8. Diagnostics -----------------------------------------------------------
+    # 7. Diagnostics -----------------------------------------------------------
     if (run.diagnostics) {
         message("Sampling completed. Checking diagnostics...")
 
@@ -264,13 +267,18 @@ run_dipper <- function(prep.data,
     }
 
 
-    # 9. Return output object --------------------------------------------------
+    # 8. Keep MCMC samples only for the specified parameters -------------------
+    if (!is.null(keep.pars) && length(keep.pars) > 0) {
+        fit$.__enclos_env__$private$draws_ <- fit$draws(variables = keep.pars)
+    }
+
+
+    # 9. Return output object -------------------------------------------------
     structure(
         list(
             stanfit = fit,
             dipper_data = prep.data,
-            symmetric = symmetric,
-            is_longitudinal = is_longitudinal
+            symmetric = symmetric
         ),
         class = "dipper_fit"
     )

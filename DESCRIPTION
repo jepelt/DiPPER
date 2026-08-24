@@ -1,6 +1,6 @@
 Package: DiPPER
-Title: A Bayesian Hierarchical Approach to Differential Prevalence Analysis
-Version: 0.1.0
+Title: Differential Prevalence via Probabilistic Estimation in R
+Version: 0.99.0
 Authors@R: c(
     person(given = "Juho",
            family = "Pelto",
@@ -10,33 +10,40 @@ Authors@R: c(
     person(given = "Leo",
            family = "Lahti",
            role = "aut",
-           email = "leo.lahti@utu.fi",
-           comment = c(ORCID = "0000-0001-5537-637X"))
+           email = "leo.lahti@iki.fi",
+           comment = c(ORCID = "0000-0001-5537-637X")),
+    person(given = "Research Council of Finland",
+           role = "fnd",
+           comment = "Strategic Research Council, decision 372345")
   )
 Description: Implements a Bayesian hierarchical model for differential prevalence 
     analysis, tailored for microbiome studies. The method accommodates both 
     cross-sectional and longitudinal designs, providing finite effect estimates 
     and uncertainty intervals that are naturally adjusted for multiple testing 
     via hierarchical shrinkage. Posterior inference is performed via Markov 
-    chain Monte Carlo (MCMC) using 'cmdstanr' as the backend.
+    chain Monte Carlo (MCMC) using 'CmdStan' as the backend.
 License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends: 
-    R (>= 4.1.0)
+    R (>= 4.5.0)
 Imports: 
-    cmdstanr,
+    instantiate,
     SummarizedExperiment,
+    TreeSummarizedExperiment,
     stats,
-    ggplot2,
-    TreeSummarizedExperiment
+    ggplot2
 Suggests: 
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
-Remotes: 
-    stan-dev/cmdstanr
+    rmarkdown,
+    BiocStyle
+SystemRequirements: CmdStan (https://mc-stan.org/users/interfaces/cmdstan)
+biocViews: Software, Microbiome, Bayesian, Regression, DifferentialExpression,
+    Sequencing
 URL: https://github.com/jepelt/DiPPER
 BugReports: https://github.com/jepelt/DiPPER/issues
 Config/roxygen2/version: 8.0.0
-LazyData: true
+Config/testthat/edition: 3
+LazyData: false
+VignetteBuilder: knitr

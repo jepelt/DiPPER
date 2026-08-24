@@ -1,21 +1,46 @@
 #' Plot method for DiPPER fit objects
 #'
-#' @param x A dipper_fit object returned by run_dipper.
-#' @param prob Numeric. Probability mass for the credible intervals.
-#'   Default is 0.95 (95% interval).
+#' @param x A \code{dipper_fit} object returned by \code{\link{dipper}}.
+#' @param prob Numeric. Probability mass for the credible interval (analogous to
+#'   confidence level in frequentist statistics). Default is 0.95 (i.e.,
+#'   95 percent credible intervals are produced).
 #' @param show.taxa Selection criteria for taxa: "significant" (credible
-#'   intervals not overlapping OR = 1),
-#'   "all", or an integer k (top k taxa ranked by pseudo_q). Default is 10.
-#' @param original.scale Logical. If TRUE (default), continuous covariates
-#'   are back-transformed to their original scale. If FALSE, results are
-#'   presented per one standard deviation increase.
+#'   intervals not overlapping OR = 1), "all", or an integer k (top k taxa
+#'   ranked by pseudo_q, see \code{\link{summary.dipper_fit}}). Default is
+#'   "significant".
+#' @param original.scale Logical. If \code{TRUE} (default), continuous
+#'   covariates are back-transformed to their original scale. If \code{FALSE},
+#'   results are presented per one standard deviation increase.
 #' @param ... Additional arguments (currently ignored).
 #'
-#' @return A ggplot object.
+#' @details
+#' This function generates a forest plot of the differential prevalence
+#' estimates for the variable of interest.
+#'
+#' The credible intervals are based on the \code{(1 - prob) / 2} and
+#' \code{1 - (1 - prob) / 2} posterior quantiles.
+#'
+#' Note that the significance is determined by whether the
+#' \code{prob * 100} percent credible interval excludes OR = 1. Significance is
+#' thus affected by the \code{prob} level.
+#'
+#' @return A \code{ggplot} object.
 #' @import ggplot2
 #' @method plot dipper_fit
 #' @export
-plot.dipper_fit <- function(x, prob = 0.95, show.taxa = 10,
+#'
+#' @examples
+#' library(DiPPER)
+#'
+#' # Load pre-run model fit for the example dataset (tse_hintikka)
+#' data("fit_example")
+#'
+#' # Plot the results for significant taxa (with 95 percent credible intervals)
+#' plot(fit_example)
+#'
+#' # Plot the results for all taxa and use 90 percent credible intervals
+#' plot(fit_example, prob = 0.90, show.taxa = "all")
+plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
                             original.scale = TRUE, ...) {
     if (!inherits(x, "dipper_fit")) {
         stop("Input must be a 'dipper_fit' object.")
@@ -78,7 +103,8 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = 10,
     if (is.character(show.taxa) && show.taxa == "significant") {
         plot_df <- plot_df[(plot_df$lower > 1 | plot_df$upper < 1), ]
         if (nrow(plot_df) == 0) {
-            message("No significant taxa found. Returning empty plot.")
+            message("No significant taxa found. Returning empty plot.\n",
+                    "Consider using lower 'prob' or 'show.taxa = \"all\"'.")
             return(invisible(NULL))
         }
     } else if (is.numeric(show.taxa)) {
@@ -98,7 +124,8 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = 10,
     if (!is.null(var_levels) && length(var_levels) >= 2) {
         ref_lvl <- var_levels[1]
 
-        if (effect_name != var_int && grepl(paste0("^", var_int), effect_name)){
+        if (effect_name != var_int &&
+            grepl(paste0("^", var_int), effect_name)) {
             comp_lvl <- sub(paste0("^", var_int), "", effect_name)
         } else {
             comp_lvl <- effect_name

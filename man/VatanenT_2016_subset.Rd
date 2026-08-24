@@ -3,35 +3,29 @@
 \docType{data}
 \name{VatanenT_2016_subset}
 \alias{VatanenT_2016_subset}
-\title{Longitudinal infant/child gut microbiome data}
+\title{Longitudinal gut microbiome dataset from Vatanen et al. (2016)}
 \format{
-A \code{TreeSummarizedExperiment} object with 76 samples.
+A \code{TreeSummarizedExperiment} object.
 \describe{
-\item{colData}{Contains experimental metadata. Key variables include
-\code{subject_id} (unique individual identifier), \code{age}
-(in months), \code{antibiotics} (no/yes), and \code{gender}
-(male/female).}
-\item{assays}{Contains the \code{relative_abundance} assay.}
+\item{assay}{Contains the \code{relative_abundance} matrix (proportions).}
+\item{colData}{Contains the sample metadata: \code{subject_id} (factor),
+\code{antibiotics} (factor: no, yes), \code{age_point} (factor:
+1.5 months, 7 months), and \code{gender} (factor: male, female).}
+\item{rowTree}{Contains the phylogenetic tree.}
 }
 }
 \source{
-Vatanen T. et al. (2016). Variation in Microbiome LPS Immunogenicity
-Contributes to Autoimmunity in Humans. \emph{Cell},
-165(4):842-853; https://doi.org/10.1016/j.cell.2016.04.007.
+Data obtained via the \code{curatedMetagenomicData} R package.
+Original study: \url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/}
 }
 \usage{
-VatanenT_2016_subset
+data(VatanenT_2016_subset)
 }
 \description{
-A \code{TreeSummarizedExperiment} object containing a lightweight subset
-(40 subjects, 1-3 measurements per subject) of the Vatanen et al. (2016)
-longitudinal infant/child microbiome dataset. This dataset tracks the
-maturation of the infant intestinal microbiome over the first
-year of life.
-}
-\details{
-The dataset has been agglomerated to
-the Genus level using \code{mia::agglomerateByRank()}. The assay contains
-relative abundances expressed as proportions (0-1).
+A \code{TreeSummarizedExperiment} object containing a longitudinal subset of
+infant gut microbiome data from Vatanen et al. (2016). The data consists of
+79 infants with measurements at 1.5 and/or 7 months of age. The abundance
+data are relative abundances (proportions) and they have been agglomerated
+to the genus level.
 }
 \keyword{datasets}

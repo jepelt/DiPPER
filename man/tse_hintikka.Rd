@@ -3,33 +3,27 @@
 \docType{data}
 \name{tse_hintikka}
 \alias{tse_hintikka}
-\title{Rat microbiome data: low/high-fat diet and XOS supplementation}
+\title{Gut microbiome dataset from Hintikka et al. (2021)}
 \format{
-A \code{TreeSummarizedExperiment} object with 40 samples (rats).
+A \code{TreeSummarizedExperiment} object.
 \describe{
-\item{colData}{Contains experimental metadata. The included variables are
-the diet group (\code{Fat}: High/Low) and supplementation (\code{XOS}:
-No / Yes).}
-\item{assays}{Contains the \code{counts} assay with microbial abundances.}
+\item{assay}{Contains the \code{counts} matrix.}
+\item{colData}{Contains the sample metadata, including \code{Fat}
+(diet group, factor with levels Low and High) and \code{XOS}
+(xylo-oligosaccharide supplementation).}
 }
 }
 \source{
-Hintikka L. et al. (2021). Xylo-Oligosaccharides in Prevention of
-Hepatic Steatosis and Adipose Tissue Inflammation: Associating Taxonomic and
-Metabolomic Patterns in Fecal Microbiomes with Biclustering.
-\emph{International Journal of Environmental Research and Public Health},
-18(8):4049; https://doi.org/10.3390/ijerph18084049.
+\url{https://www.mdpi.com/1660-4601/18/8/4049}
 }
 \usage{
-tse_hintikka
+data(tse_hintikka)
 }
 \description{
-A \code{TreeSummarizedExperiment} object containing microbiome data from a
-rat experiment studying the effects of a high-fat diet and prebiotic
-xylo-oligosaccharide (XOS) supplementation.
-}
-\details{
-The dataset has been agglomerated to the Genus level using
-\code{mia::agglomerateByRank()}.
+A \code{TreeSummarizedExperiment} object containing a subset of gut
+microbiome data from an experiment studying the effects of a high-fat
+diet and xylo-oligosaccharide (XOS) supplementation on rats (N = 20 + 20).
+The abundance data are sequencing counts and they have been agglomerated
+to the genus level.
 }
 \keyword{datasets}

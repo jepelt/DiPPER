@@ -4,27 +4,52 @@
 \alias{plot.dipper_fit}
 \title{Plot method for DiPPER fit objects}
 \usage{
-\method{plot}{dipper_fit}(x, prob = 0.95, show.taxa = 10, original.scale = TRUE, ...)
+\method{plot}{dipper_fit}(x, prob = 0.95, show.taxa = "significant", original.scale = TRUE, ...)
 }
 \arguments{
-\item{x}{A dipper_fit object returned by run_dipper.}
+\item{x}{A \code{dipper_fit} object returned by \code{\link{dipper}}.}
 
-\item{prob}{Numeric. Probability mass for the credible intervals.
-Default is 0.95 (95\% interval).}
+\item{prob}{Numeric. Probability mass for the credible interval (analogous to
+confidence level in frequentist statistics). Default is 0.95 (i.e.,
+95 percent credible intervals are produced).}
 
 \item{show.taxa}{Selection criteria for taxa: "significant" (credible
-intervals not overlapping OR = 1),
-"all", or an integer k (top k taxa ranked by pseudo_q). Default is 10.}
+intervals not overlapping OR = 1), "all", or an integer k (top k taxa
+ranked by pseudo_q, see \code{\link{summary.dipper_fit}}). Default is
+"significant".}
 
-\item{original.scale}{Logical. If TRUE (default), continuous covariates
-are back-transformed to their original scale. If FALSE, results are
-presented per one standard deviation increase.}
+\item{original.scale}{Logical. If \code{TRUE} (default), continuous
+covariates are back-transformed to their original scale. If \code{FALSE},
+results are presented per one standard deviation increase.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-A ggplot object.
+A \code{ggplot} object.
 }
 \description{
 Plot method for DiPPER fit objects
+}
+\details{
+This function generates a forest plot of the differential prevalence
+estimates for the variable of interest.
+
+The credible intervals are based on the \code{(1 - prob) / 2} and
+\code{1 - (1 - prob) / 2} posterior quantiles.
+
+Note that the significance is determined by whether the
+\code{prob * 100} percent credible interval excludes OR = 1. Significance is
+thus affected by the \code{prob} level.
+}
+\examples{
+library(DiPPER)
+
+# Load pre-run model fit for the example dataset (tse_hintikka)
+data("fit_example")
+
+# Plot the results for significant taxa (with 95 percent credible intervals)
+plot(fit_example)
+
+# Plot the results for all taxa and use 90 percent credible intervals
+plot(fit_example, prob = 0.90, show.taxa = "all")
 }

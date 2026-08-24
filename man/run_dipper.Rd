@@ -16,6 +16,7 @@ run_dipper(
   max.treedepth = 10,
   run.diagnostics = TRUE,
   diagnostics.level = c("basic", "full"),
+  keep.pars = "beta",
   print.progress = 200,
   prior.alpha.sd = 4,
   prior.tau.sd = 1,
@@ -57,6 +58,10 @@ after sampling. Default is TRUE.}
 "basic" (default) checks main parameters (alpha, beta, covariates,
 hyperparameters).
 "full" checks all parameters, including latent and auxiliary variables.}
+
+\item{keep.pars}{Character vector of Stan parameter names to retain in the
+returned object, or NULL to retain all of them. Default is
+"beta", i.e. only the samples for the parameters of interest are retained.}
 
 \item{print.progress}{How often to print MCMC progress. Set to 0 or
 FALSE to disable. Default is 200.}
