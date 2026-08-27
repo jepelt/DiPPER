@@ -8,3 +8,4 @@ inst/stan/.*\.rds$
 ^src/stan/.*\.exe$
 ^src/stan/.*\.o$
 ^DiPPER\.BiocCheck$
+^\.gitattributes$

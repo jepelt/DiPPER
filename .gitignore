@@ -20,3 +20,5 @@ src/stan/*.exe
 src/stan/*.o
 bin/stan/
 DiPPER.BiocCheck/
+*.tar.gz
+*.Rcheck
