@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_dipper.R
 \name{run_dipper}
 \alias{run_dipper}
-\title{Run the DiPPER model using cmdstanr}
+\title{Run the DiPPER model using CmdStan}
 \usage{
 run_dipper(
   prep.data,
@@ -17,6 +17,7 @@ run_dipper(
   run.diagnostics = TRUE,
   diagnostics.level = c("basic", "full"),
   keep.pars = "beta",
+  keep.stanfit = FALSE,
   print.progress = 200,
   prior.alpha.sd = 4,
   prior.tau.sd = 1,
@@ -59,9 +60,15 @@ after sampling. Default is TRUE.}
 hyperparameters).
 "full" checks all parameters, including latent and auxiliary variables.}
 
-\item{keep.pars}{Character vector of Stan parameter names to retain in the
-returned object, or NULL to retain all of them. Default is
-"beta", i.e. only the samples for the parameters of interest are retained.}
+\item{keep.pars}{Character vector of Stan parameter names whose posterior
+draws are retained in the returned object, or NULL to retain all of them.
+The default, "beta", keeps only the differential prevalence parameters of
+the variable of interest, which is what \code{summary} and \code{plot}
+need. Note that this argument does not affect convergence diagnostics.}
+
+\item{keep.stanfit}{Logical. Whether to include the underlying CmdStanR
+fit R6 object in the returned object (e.g. for manual model fit checking).
+Default is FALSE.}
 
 \item{print.progress}{How often to print MCMC progress. Set to 0 or
 FALSE to disable. Default is 200.}
@@ -88,9 +95,17 @@ Default is 2.0.}
 distribution of the taxon-specific random intercept standard deviations.
 Default is 1.0.}
 
-\item{...}{Additional arguments passed to \code{cmdstan_model$sample()}.}
+\item{...}{Additional arguments passed to the \code{$sample()} method of the
+CmdStanR model object.}
+}
+\value{
+A list of class \code{dipper_fit} with elements \code{draws} (a
+matrix of posterior draws, with one column per retained parameter),
+\code{dipper_data}, \code{symmetric} and \code{diagnostics}. If
+\code{keep.stanfit = TRUE}, the CmdStanR fit R6 object is included as
+\code{stanfit}.
 }
 \description{
-Run the DiPPER model using cmdstanr
+Run the DiPPER model using CmdStan
 }
 \keyword{internal}

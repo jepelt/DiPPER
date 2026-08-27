@@ -11,11 +11,12 @@
 #' @details
 #' DiPPER is a Bayesian hierarchical model-based approach designed for
 #' differential prevalence analysis, especially for microbiome studies.
-#' It is designed for study designs where there is one **variable of interest**
-#' (e.g. treatment group, disease status, etc.) and potentially other covariates
-#' (e.g. age, sex, etc.) that may confound the associations between microbe
-#' prevalences and the variable of interest. DiPPER can also be applied to
-#' longitudinal or repeated measures data.
+#' It is designed for study designs where there is one
+#' **variable of interest**
+#' (e.g. treatment group, disease status, etc.) and potentially other
+#' covariates (e.g. age, sex, etc.) that may confound the associations between
+#' microbe prevalences and the variable of interest. DiPPER can also be applied
+#' to longitudinal or repeated measures data.
 #'
 #' Technically, DiPPER models the presence/absence of taxonomic features (e.g.
 #' genera or species) using multiple logistic regression models. The models are
@@ -83,37 +84,49 @@
 #'
 #' @return A list object of class \code{dipper_fit} containing:
 #' \describe{
-#'   \item{stanfit}{The \code{CmdStanMCMC} object returned by CmdStanR.}
+#'   \item{draws}{A matrix of posterior draws, with one row per MCMC draw and
+#'   one column per retained parameter. By default only the draws of
+#'   \code{beta} (the parameters of interest) are retained; see
+#'   \code{keep.pars}.}
 #'   \item{dipper_data}{A list containing the prepared data passed to Stan.}
 #'   \item{symmetric}{Logical indicating if a symmetric Laplace prior for
 #'   differential prevalence parameters was used.}
+#'   \item{diagnostics}{A list of MCMC diagnostics. Always
+#'   contains \code{num_divergent}, \code{num_max_treedepth},
+#'   \code{time_total}, \code{n_chains} and \code{n_iter_sampling}. If
+#'   \code{run.diagnostics = TRUE}, it additionally contains
+#'   \code{max_rhat}, \code{min_ess_bulk}, \code{min_ess_tail} and
+#'   \code{diagnostics_level}.}
+#'   \item{stanfit}{The \code{CmdStanMCMC} object returned by CmdStanR.
+#'   Present only if \code{keep.stanfit = TRUE}. Note that this is an R6
+#'   object that depends on the cmdstanr namespace, so a fit containing it
+#'   cannot be reloaded on a machine where cmdstanr is unavailable.}
 #' }
 #'
 #' @export
 #'
 #' @examples
-#' library(DiPPER)
 #' data("tse_hintikka")
 #'
 #' # Run DiPPER
 #' # Note: niter = 400, chains = 1 and cores = 1 are used here for speed.
 #' # In real applications, use higher values (e.g. the default niter = 2000,
 #' # chains = 4, and cores = 4).
-#' fit <- dipper(
-#'   tse = tse_hintikka,
-#'   formula = ~ Fat + XOS,
-#'   assay.type = "counts",
-#'   niter = 400,
-#'   chains = 1,
-#'   cores = 1
-#' )
+#' if (instantiate::stan_cmdstan_exists()) {
+#'     fit <- dipper(
+#'         tse = tse_hintikka,
+#'         formula = ~ Fat + XOS,
+#'         assay.type = "counts",
+#'         niter = 400,
+#'         chains = 2,
+#'         cores = 2
+#'     )
 #'
-#' # Print the model fit summary
-#' print(fit)
+#'     print(fit)
 #'
-#' # Summarize the results
-#' res <- summary(fit)
-#' head(res)
+#'     res <- summary(fit)
+#'     head(res)
+#' }
 dipper <- function(tse = NULL,
                    formula,
                    assay = NULL,
@@ -135,6 +148,7 @@ dipper <- function(tse = NULL,
                    run.diagnostics = TRUE,
                    diagnostics.level = c("basic", "full"),
                    keep.pars = "beta",
+                   keep.stanfit = FALSE,
                    seed = 1,
                    print.progress = 200,
                    prior.alpha.sd = 4.0,
@@ -178,6 +192,8 @@ dipper <- function(tse = NULL,
         max.treedepth = max.treedepth,
         run.diagnostics = run.diagnostics,
         diagnostics.level = diagnostics.level,
+        keep.pars = keep.pars,
+        keep.stanfit = keep.stanfit,
         seed = seed,
         print.progress = print.progress,
         prior.alpha.sd = prior.alpha.sd,

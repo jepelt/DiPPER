@@ -4,5 +4,7 @@
 ^\.claude$
 inst/stan/.*\.exe$
 inst/stan/.*\.rds$
-^data-raw$
 ^LICENSE\.md$
+^src/stan/.*\.exe$
+^src/stan/.*\.o$
+^DiPPER\.BiocCheck$

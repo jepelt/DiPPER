@@ -9,8 +9,9 @@
 #'   ranked by pseudo_q, see \code{\link{summary.dipper_fit}}). Default is
 #'   "significant".
 #' @param original.scale Logical. If \code{TRUE} (default), continuous
-#'   covariates are back-transformed to their original scale. If \code{FALSE},
-#'   results are presented per one standard deviation increase.
+#'   variable of interest is back-transformed to their original scale. If
+#'   \code{FALSE}, results are presented per one standard deviation increase.
+#'   Ignored for categorical variable of interest.
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @details
@@ -24,14 +25,13 @@
 #' \code{prob * 100} percent credible interval excludes OR = 1. Significance is
 #' thus affected by the \code{prob} level.
 #'
-#' @return A \code{ggplot} object.
+#' @return A \code{ggplot} object or NULL (invisibly) if no taxa remain after
+#' filtering.
 #' @import ggplot2
 #' @method plot dipper_fit
 #' @export
 #'
 #' @examples
-#' library(DiPPER)
-#'
 #' # Load pre-run model fit for the example dataset (tse_hintikka)
 #' data("fit_example")
 #'
@@ -42,8 +42,17 @@
 #' plot(fit_example, prob = 0.90, show.taxa = "all")
 plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
                             original.scale = TRUE, ...) {
+
     if (!inherits(x, "dipper_fit")) {
-        stop("Input must be a 'dipper_fit' object.")
+        stop("Input must be a 'dipper_fit' object.", call. = FALSE)
+    }
+
+    if (is.character(show.taxa)) {
+        show.taxa <- match.arg(show.taxa, c("significant", "all"))
+    }
+
+    if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {
+        stop("'prob' must be a single number between 0 and 1.", call. = FALSE)
     }
 
     d_data <- x$dipper_data
@@ -56,8 +65,19 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
     lower_prob <- alpha_level / 2
     upper_prob <- 1 - (alpha_level / 2)
 
+
     # 1. Extract draws for differential prevalence parameters (beta)
-    draws <- x$stanfit$draws(variables = "beta", format = "matrix")
+    draws <- x$draws
+    if (is.null(draws)) {
+        stop("The fit object contains no posterior draws.", call. = FALSE)
+    }
+
+    beta_cols <- grep("^beta\\[", colnames(draws))
+    if (length(beta_cols) == 0) {
+        stop("No draws of 'beta' found in the fit object. It was fitted ",
+             "with keep.pars excluding 'beta'.", call. = FALSE)
+    }
+    draws <- draws[, beta_cols, drop = FALSE]
 
     # Back-transform continuous variables to original scale if requested
     scale_factor <- 1

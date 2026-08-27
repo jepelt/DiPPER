@@ -8,8 +8,8 @@
 #' @param prob Numeric. Probability mass for the credible interval (analogous to
 #'   confidence level in frequentist statistics). Default is 0.95 (i.e.,
 #'   95 percent credible intervals are produced).
-#' @param scale Character string indicating the scale of the estimates. Either
-#'   \code{"log_odds"} (default) or \code{"odds_ratio"}.
+#' @param or.scale Character string indicating the scale of the estimates.
+#'   Either \code{"log_odds"} (default) or \code{"odds_ratio"}.
 #' @param original.scale Logical. If \code{TRUE} (default), continuous
 #'   covariates are back-transformed to their original scale. If \code{FALSE},
 #'   results are presented per one standard deviation increase. Ignored for
@@ -25,8 +25,8 @@
 #' Note that as the boundaries of the credible intervals depend on the
 #' \code{prob} level, so does the \code{significant} logical flag.
 #'
-#' \code{max_prob} is the maximum of the posterior probabilities that the
-#' parameter is strictly positive or strictly negative. Consequently, it
+#' \code{pseudo_q} is two times the minimum of the posterior probabilities that
+#' the parameter is strictly positive or strictly negative. Consequently, it
 #' indicates the highest "significance level" at which the result would be
 #' considered "statistically significant" (i.e., the credible interval
 #' excluding zero). It thus bears some resemblance to a multiplicity-adjusted
@@ -52,8 +52,6 @@
 #' @importFrom stats median quantile
 #'
 #' @examples
-#' library(DiPPER)
-#'
 #' # Load pre-run model fit for the example dataset (tse_hintikka)
 #' data("fit_example")
 #'
@@ -62,30 +60,48 @@
 #' head(res_log)
 #'
 #' # Summarize on odds ratio scale with 90 percent interval
-#' res_or <- summary(fit_example, prob = 0.90, scale = "odds_ratio")
+#' res_or <- summary(fit_example, prob = 0.90, or.scale = "odds_ratio")
 #' head(res_or)
 summary.dipper_fit <- function(object,
                                prob = 0.95,
-                               scale = c("log_odds", "odds_ratio"),
+                               or.scale = c("log_odds", "odds_ratio"),
                                original.scale = TRUE,
                                ...) {
 
-    scale <- match.arg(scale)
+    or.scale <- match.arg(or.scale)
 
     if (!inherits(object, "dipper_fit")) {
-        stop("Input must be a 'dipper_fit' object.")
+        stop("Input must be a 'dipper_fit' object.", call. = FALSE)
+    }
+
+    if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {
+        stop("'prob' must be a single number between 0 and 1.", call. = FALSE)
     }
 
     alpha <- 1 - prob
     lower_prob <- alpha / 2
     upper_prob <- 1 - (alpha / 2)
 
-    draws <- object$stanfit$draws("beta", format = "matrix")
+    draws <- object$draws
     taxa_names <- object$dipper_data$taxa_names
     var_int <- object$dipper_data$var.of.interest
 
+    if (is.null(draws)) {
+        stop("The fit object contains no posterior draws.", call. = FALSE)
+    }
+
+    # Keep only beta, since a fit made with keep.pars = NULL also carries the
+    # covariate and latent parameters.
+    beta_cols <- grep("^beta\\[", colnames(draws))
+    if (length(beta_cols) == 0) {
+        stop("No draws of 'beta' found in the fit object. It was fitted ",
+             "with keep.pars excluding 'beta'.", call. = FALSE)
+    }
+    draws <- draws[, beta_cols, drop = FALSE]
+
     if (ncol(draws) != length(taxa_names)) {
-        stop("Mismatch between the number of parameters and taxa names.")
+        stop("Mismatch between the number of parameters and taxa names.",
+             call. = FALSE)
     }
 
     # Back-transform continuous variables to original scale if requested
@@ -105,14 +121,14 @@ summary.dipper_fit <- function(object,
 
     pseudo_q <- 2 * (1 - max_prob)
 
-    # Prevent pseudo_q from being exactly 0 to avoid log(0) in volcano plots
+    # Prevent pseudo_q from being exactly 0
     n_draws <- nrow(draws)
     pseudo_q[pseudo_q == 0] <- 0.5 * (1 / n_draws)
 
-    # Significance is determined on the log-odds scale
+    # Significance
     significant <- (ci_lower > 0) | (ci_upper < 0)
 
-    if (scale == "odds_ratio") {
+    if (or.scale == "odds_ratio") {
         est_median <- exp(est_median)
         ci_lower <- exp(ci_lower)
         ci_upper <- exp(ci_upper)
@@ -128,7 +144,7 @@ summary.dipper_fit <- function(object,
         stringsAsFactors = FALSE
     )
 
-    est_name <- ifelse(scale == "odds_ratio", "odds_ratio", "log_or")
+    est_name <- ifelse(or.scale == "odds_ratio", "odds_ratio", "log_or")
     colnames(res)[2] <- est_name
 
     # Sort by pseudo_q (smallest pseudo q-value at the top)

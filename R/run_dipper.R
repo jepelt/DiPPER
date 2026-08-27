@@ -1,4 +1,4 @@
-#' Run the DiPPER model using cmdstanr
+#' Run the DiPPER model using CmdStan
 #'
 #' @param prep.data The list returned by \code{prep_dipper_data}.
 #' @param symmetric Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
@@ -19,9 +19,14 @@
 #'   "basic" (default) checks main parameters (alpha, beta, covariates,
 #'   hyperparameters).
 #'   "full" checks all parameters, including latent and auxiliary variables.
-#' @param keep.pars Character vector of Stan parameter names to retain in the
-#'   returned object, or NULL to retain all of them. Default is
-#'   "beta", i.e. only the samples for the parameters of interest are retained.
+#' @param keep.pars Character vector of Stan parameter names whose posterior
+#'   draws are retained in the returned object, or NULL to retain all of them.
+#'   The default, "beta", keeps only the differential prevalence parameters of
+#'   the variable of interest, which is what \code{summary} and \code{plot}
+#'   need. Note that this argument does not affect convergence diagnostics.
+#' @param keep.stanfit Logical. Whether to include the underlying CmdStanR
+#'   fit R6 object in the returned object (e.g. for manual model fit checking).
+#'   Default is FALSE.
 #' @param print.progress How often to print MCMC progress. Set to 0 or
 #'   FALSE to disable. Default is 200.
 #' @param prior.alpha.sd Prior standard deviation for alpha (fixed intercept
@@ -39,8 +44,13 @@
 #' @param prior.sigma.subj Prior standard deviation for the half-normal prior
 #'   distribution of the taxon-specific random intercept standard deviations.
 #'   Default is 1.0.
-#' @param ... Additional arguments passed to \code{cmdstan_model$sample()}.
-#'
+#' @param ... Additional arguments passed to the \code{$sample()} method of the
+#'   CmdStanR model object.
+#' @return A list of class \code{dipper_fit} with elements \code{draws} (a
+#'   matrix of posterior draws, with one column per retained parameter),
+#'   \code{dipper_data}, \code{symmetric} and \code{diagnostics}. If
+#'   \code{keep.stanfit = TRUE}, the CmdStanR fit R6 object is included as
+#'   \code{stanfit}.
 #' @keywords internal
 run_dipper <- function(prep.data,
                        symmetric = FALSE,
@@ -54,6 +64,7 @@ run_dipper <- function(prep.data,
                        run.diagnostics = TRUE,
                        diagnostics.level = c("basic", "full"),
                        keep.pars = "beta",
+                       keep.stanfit = FALSE,
                        print.progress = 200,
                        prior.alpha.sd = 4.0,
                        prior.tau.sd = 1.0,
@@ -68,17 +79,27 @@ run_dipper <- function(prep.data,
 
 
     # 1. Dependency and input validation ---------------------------------------
-    if (!requireNamespace("cmdstanr", quietly = TRUE)) {
-        stop("cmdstanr required. Install via cmdstanr::install_cmdstanr()")
+    if (!instantiate::stan_cmdstan_exists()) {
+        stop(
+            "CmdStan not found. Install it with cmdstanr::install_cmdstan(), ",
+            "then reinstall DiPPER so that the Stan models get compiled.",
+            call. = FALSE
+        )
     }
 
     req_names <- c("y", "X", "N", "K", "P", "design_matrix_cols")
     if (!all(req_names %in% names(prep.data))) {
-        stop("Invalid prep.data. Generate using prep_dipper_data().")
+        stop("Invalid prep.data. Generate using prep_dipper_data().",
+             call. = FALSE)
     }
 
     if (!is.null(keep.pars) && !is.character(keep.pars)) {
-        stop("'keep.pars' must be a character vector or NULL.")
+        stop("'keep.pars' must be a character vector or NULL.",
+             call. = FALSE)
+    }
+
+    if (!is.logical(keep.stanfit) || length(keep.stanfit) != 1) {
+        stop("'keep.stanfit' must be TRUE or FALSE.", call. = FALSE)
     }
 
 
@@ -163,18 +184,21 @@ run_dipper <- function(prep.data,
 
     # 6. Compile and run sampling ----------------------------------------------
 
-    # Calculate actual sampling iterations for cmdstanr
+    # Calculate actual sampling iterations for the sampler
     actual_sampling <- niter - niter.warmup
     if (actual_sampling <= 0) {
-        stop("'niter' must be strictly greater than 'niter.warmup'.")
+        stop("'niter' must be strictly greater than 'niter.warmup'.",
+             call. = FALSE)
     }
 
     message("Preparing Stan model...")
 
-    mod <- instantiate::stan_package_model(name = sub("\\.stan$",
-                                                      "",
-                                                      file_name),
-                                           package = "DiPPER")
+    model_name <- sub("\\.stan$", "", file_name)
+
+    mod <- instantiate::stan_package_model(
+        name = model_name,
+        package = "DiPPER"
+    )
 
     message(sprintf(
         "Starting sampling with %d chains on %d cores...", chains, cores
@@ -202,11 +226,20 @@ run_dipper <- function(prep.data,
 
 
     # 7. Diagnostics -----------------------------------------------------------
+    diag_sum <- fit$diagnostic_summary(quiet = TRUE)
+
+    diagnostics <- list(
+        num_divergent = sum(diag_sum$num_divergent),
+        num_max_treedepth = sum(diag_sum$num_max_treedepth),
+        time_total = fit$time()$total,
+        n_chains = chains,
+        n_iter_sampling = actual_sampling
+    )
+
     if (run.diagnostics) {
         message("Sampling completed. Checking diagnostics...")
 
-        diag_sum <- fit$diagnostic_summary()
-        divs <- sum(diag_sum$num_divergent)
+        divs <- diagnostics$num_divergent
 
         if (diagnostics.level == "basic") {
             target_vars <- c("alpha", "beta", "tau")
@@ -228,6 +261,11 @@ run_dipper <- function(prep.data,
         max_rhat <- suppressWarnings(max(summ$rhat, na.rm = TRUE))
         min_ess_bulk <- suppressWarnings(min(summ$ess_bulk, na.rm = TRUE))
         min_ess_tail <- suppressWarnings(min(summ$ess_tail, na.rm = TRUE))
+
+        diagnostics$max_rhat <- max_rhat
+        diagnostics$min_ess_bulk <- min_ess_bulk
+        diagnostics$min_ess_tail <- min_ess_tail
+        diagnostics$diagnostics_level <- diagnostics.level
 
         warn_msg <- c()
         rec_iter <- niter * 2
@@ -267,19 +305,31 @@ run_dipper <- function(prep.data,
     }
 
 
-    # 8. Keep MCMC samples only for the specified parameters -------------------
+    # 8. Extract the posterior draws -------------------------------------------
     if (!is.null(keep.pars) && length(keep.pars) > 0) {
-        fit$.__enclos_env__$private$draws_ <- fit$draws(variables = keep.pars)
+        draws <- fit$draws(variables = keep.pars, format = "matrix")
+        if (keep.stanfit) {
+            fit$.__enclos_env__$private$draws_ <-
+                fit$draws(variables = keep.pars)
+        }
+    } else {
+        draws <- fit$draws(format = "matrix")
     }
+
+    draws <- as.matrix(draws)
 
 
     # 9. Return output object -------------------------------------------------
-    structure(
-        list(
-            stanfit = fit,
-            dipper_data = prep.data,
-            symmetric = symmetric
-        ),
-        class = "dipper_fit"
+    out <- list(
+        draws = draws,
+        dipper_data = prep.data,
+        symmetric = symmetric,
+        diagnostics = diagnostics
     )
+
+    if (keep.stanfit) {
+        out$stanfit <- fit
+    }
+
+    structure(out, class = "dipper_fit")
 }

@@ -1,7 +1,7 @@
 data {
   int<lower=0> N;                 // Number of samples
   int<lower=0> K;                 // Number of taxa/features
-  int<lower=0> P;                 // Number of predictors (incl. intercept)
+  int<lower=0> P;                 // Number of predictors (excl. intercept)
   int<lower=0> S;                 // Number of subjects/individuals
   array[N] int<lower=1, upper=S> subj; // Subject ID for each sample
 

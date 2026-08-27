@@ -6,7 +6,17 @@
 #' @return The object \code{x} invisibly.
 #' @method print dipper_fit
 #' @export
+#'
+#' @examples
+#' # Load pre-run model fit for the example dataset (tse_hintikka)
+#' data("fit_example")
+#'
+#' print(fit_example)
 print.dipper_fit <- function(x, ...) {
+
+    if (!inherits(x, "dipper_fit")) {
+        stop("Input must be a 'dipper_fit' object.", call. = FALSE)
+    }
 
     cat("DiPPER Model Fit\n")
     cat("----------------\n")
@@ -24,31 +34,42 @@ print.dipper_fit <- function(x, ...) {
     cat("Features modeled:    ", x$dipper_data$K, "\n")
     cat("Samples:             ", x$dipper_data$N, "\n")
 
-    # Posterior samples
-    draws_dim <- dim(x$stanfit$draws())
-    n_iters <- draws_dim[1]
-    n_chains <- draws_dim[2]
-    tot_draws <- n_iters * n_chains
-    cat("Posterior draws:     ", tot_draws,
-        sprintf(" (%d chains x %d iterations)", n_chains, n_iters), "\n")
+    # Everything below is read from the stored diagnostics rather than from
+    # the CmdStanMCMC object, so that it also works for saved fits.
+    diag <- x$diagnostics
 
-    # Diagnostics (instantaneous from sampler metadata)
-    diag_sum <- x$stanfit$diagnostic_summary()
-    divs <- sum(diag_sum$num_divergent)
-    treedepths <- sum(diag_sum$num_max_treedepth)
+    if (!is.null(diag)) {
 
-    if (divs == 0 && treedepths == 0) {
-        cat("MCMC diagnostics:    ",
-            "No divergent transitions or max treedepth hits\n")
-    } else {
-        cat("MCMC diagnostics:    ", divs, "divergent transitions,",
-            treedepths, "max treedepth hits\n")
-    }
+        # Posterior samples
+        if (!is.null(diag$n_chains) && !is.null(diag$n_iter_sampling)) {
+            tot_draws <- diag$n_chains * diag$n_iter_sampling
+            cat("Posterior draws:     ", tot_draws,
+                sprintf(" (%d chains x %d iterations)",
+                        diag$n_chains, diag$n_iter_sampling), "\n")
+        }
 
-    # Computation time (CmdStanR wall time for sampling)
-    if (!is.null(x$stanfit$time()$total)) {
-        run_time <- round(x$stanfit$time()$total, 2)
-        cat("MCMC sampling time:  ", run_time, "seconds\n")
+        if (diag$num_divergent == 0 && diag$num_max_treedepth == 0) {
+            cat("MCMC diagnostics:    ",
+                "No divergent transitions or max treedepth hits\n")
+        } else {
+            cat("MCMC diagnostics:    ", diag$num_divergent,
+                "divergent transitions,",
+                diag$num_max_treedepth, "max treedepth hits\n")
+        }
+
+        if (!is.null(diag$max_rhat) && is.finite(diag$max_rhat)) {
+            cat("Convergence:         ",
+                sprintf(
+                    "max R-hat %.3f, min bulk ESS %.0f, min tail ESS %.0f",
+                    diag$max_rhat, diag$min_ess_bulk, diag$min_ess_tail
+                ),
+                "\n")
+        }
+
+        if (!is.null(diag$time_total)) {
+            cat("MCMC sampling time:  ",
+                round(diag$time_total, 2), "seconds\n")
+        }
     }
 
     invisible(x)

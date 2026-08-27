@@ -1,6 +1,6 @@
 ---
 title: "Differential prevalence analysis with DiPPER"
-author: 
+author:
   - name: Juho Pelto
     affiliation: University of Turku
     email: jepelt@utu.fi
@@ -8,7 +8,7 @@ author:
     affiliation: University of Turku
     email: leo.lahti@iki.fi
 package: DiPPER
-output: 
+output:
   BiocStyle::html_document:
     toc_float: true
 bibliography: references.bib
@@ -24,16 +24,9 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## DiPPER fits its models with CmdStan, which is an external system
-## requirement rather than an R package dependency, and is therefore not
-## available on every machine that renders this vignette.
-##
-## Model-fitting chunks are evaluated only when CmdStan is present. Otherwise
-## the pre-computed fits shipped in inst/extdata are loaded, so that the
-## downstream chunks (summaries, plots) are always evaluated.
-##
-## Set DIPPER_NO_CMDSTAN=true to force the pre-computed branch when testing.
-
+# Checks whether CmdStan is available and the model-fitting chunks can be
+# evaluated only when CmdStan is present. Otherwise the pre-computed fits in
+# inst/extdata are used.
 cmdstan_ok <- !identical(Sys.getenv("DIPPER_NO_CMDSTAN"), "true") &&
     requireNamespace("instantiate", quietly = TRUE) &&
     instantiate::stan_cmdstan_exists()
@@ -45,10 +38,10 @@ cache_file <- function(x) {
 have_cache <- nzchar(cache_file("fit_hintikka.rds")) &&
     nzchar(cache_file("fit_vatanen.rds"))
 
-## Fit the models from scratch?
+# Run the DiPPER models?
 run_fit <- cmdstan_ok
 
-## Can we show results at all (either freshly fitted or pre-computed)?
+# Can results be shown?
 show_res <- cmdstan_ok || have_cache
 ```
 
@@ -72,16 +65,10 @@ differential prevalence analysis. In addition to the main variable of interest
 sex, BMI). It can also be used to analyze *longitudinal* (or repeated measures)
 microbiome data.
 
-As the observed presence status of a feature can heavily depend on the
-sequencing depth (library size), DiPPER by default accounts for this by
-including the read depth as a covariate in the model. (However, DiPPER can
-also be run without this adjustment if sequencing depth information is
-unavailable.)
-
 ## Advantages of DiPPER
 
-While differential prevalence analysis can be performed using standard
-(frequentist) logistic regression, such approaches suffer certain
+While differential prevalence analysis can be performed using approaches based
+on standard (frequentist) logistic regression, such approaches suffer certain
 limitations that DiPPER aims to solve:
 
 * **Robustness in boundary cases:** Boundary cases (or quasi-complete
@@ -98,7 +85,7 @@ limitations that DiPPER aims to solve:
   robust versions of frequentist logistic regression (e.g., Firth's penalized
   regression [@Firth1993BiasEstimates]), they can be difficult to generalize
   to longitudinal settings. DiPPER, however, provides a single, unified
-  framework for both cross-sectional and longitudinal analyses.
+  robust framework for both cross-sectional and longitudinal analyses.
 
 * **Inherent multiplicity adjustment:** Standard approaches typically calculate
   an unadjusted *p*-value for each feature and subsequently apply a post-hoc
@@ -122,7 +109,7 @@ and two differential abundance methods (MaAsLin2
 
 DiPPER demonstrated high sensitivity in detecting potentially differentially
 prevalent features while maintaining a well-calibrated family-wise error rate
-under the global null hypothesis. Most notably, it outperformed all
+under the global null hypothesis. Moreover, it outperformed all
 alternatives in the replication of findings across independent studies.
 
 ## More information
@@ -134,7 +121,7 @@ results, can be found in our pre-print [@Pelto2026DiPPER:Studies].
 
 Installing DiPPER is generally straightforward, but it requires dependencies
 from both Bioconductor (for handling microbiome data structures) and Stan (for
-Bayesian inference). 
+Bayesian inference).
 
 ## Stan backend (cmdstanr)
 
@@ -158,9 +145,13 @@ cmdstanr::install_cmdstan()
 
 ## Bioconductor dependencies and DiPPER
 
-Once CmdStan is ready, you can install the development version of DiPPER. 
+Once CmdStan is ready, you can install the development version of DiPPER.
 Using `BiocManager` for the installation automatically installs all required
 Bioconductor dependencies.
+
+*Note: DiPPER compiles its Stan models during installation, which may take a
+few minutes and produce verbose output. This is expected, and it is done only
+once: afterwards the models are ready to use.*
 
 ```{r install_bioc, eval=FALSE}
 # Install BiocManager if it is not already installed
@@ -185,15 +176,13 @@ We run DiPPER with its default settings. We only need to provide the dataset,
 the model formula, and the name of the assay containing the count data
 (`assay.type = "counts"`). Note that the *variable of interest* (here `Fat`)
 must be set as the *first* variable in the model formula. Note also that DiPPER
-by default controls for the library size (sequencing depth) in the model.
-
-*Note: When using DiPPER for the first time, compiling the Stan C++ model may
-take around one minute and produce verbose output. This is expected.*
+by default automatically computes and controls for the library size (sequencing
+depth) in the model.
 
 ```{r quick_start, eval=run_fit}
 library(DiPPER)
 
-# Load dataset (SummarizedExperiment object)
+# Load dataset (TreeSummarizedExperiment object)
 data("tse_hintikka")
 
 # Run DiPPER with the default settings
@@ -212,7 +201,7 @@ fit <- readRDS(cache_file("fit_hintikka.rds"))
 
 Next, we extract the summarized results as a `data.frame` and print the first
 seven rows (the most "significant" genera). Note that the data frame contains
-the results for the main variable of interest, which in this case is the `Fat`
+the results only for the variable of interest, which in this case is the `Fat`
 variable indicating the diet, low-fat ('Low', the reference level) or high-fat
 ('High').
 
@@ -228,8 +217,7 @@ The summarized results `data.frame` contains the following columns:
 
 * **`taxon`**: Taxon name (here: genus).
 * **`log_or`**: Differential prevalence estimate *for the variable of interest*
-  (here: `Fat`), expressed as a log(odds ratio). Here, positive values indicate
-  higher prevalence in the high-fat diet group.
+  (here: `Fat`), expressed as a log(odds ratio).
 * **`lwr`**, **`upr`**: Lower and upper limits of the 95% credible interval for
   the differential prevalence.
 * **`significant`**: A logical value indicating whether the 95% credible
@@ -242,8 +230,8 @@ The summarized results `data.frame` contains the following columns:
   interpretation.
 
 Lastly, create a forest plot (with 95% credible intervals) showing the
-significant genera (determined by the 95% credible intervals). The odd ratio
-(OR) values >1 indicate higher prevalence in the high-fat diet group.
+significant genera (determined by the 95% credible intervals). Here, the odds
+ratio (OR) values > 1 indicate higher prevalence in the high-fat diet group.
 
 ```{r quick_plot, eval=show_res, out.width="100%"}
 plot(fit)
@@ -270,7 +258,7 @@ data("VatanenT_2016_subset")
 The metadata includes the variables `subject_id` (indicating the infant),
 `age_point` (1.5 months or 7 months), `antibiotics` (use of antibiotics:
 yes/no), and `gender` (male/female). Note that there are 1-2 measurements per
-infant.
+infant in the data.
 
 ```{r vatanen_metadata}
 VatanenT_2016_subset |>
@@ -281,7 +269,8 @@ VatanenT_2016_subset |>
 Note that the abundance data are now proportions (relative abundances):
 
 ```{r vatanen_abundance}
-vatanen_assay <- SummarizedExperiment::assay(VatanenT_2016_subset)
+vatanen_assay <- SummarizedExperiment::assay(VatanenT_2016_subset,
+                                             "relative_abundance")
 vatanen_assay[c("Bifidobacterium", "Escherichia", "Veillonella"), 1:5]
 ```
 
@@ -295,14 +284,14 @@ as a random intercept term: `(1 | subject_id)`. Our formula is thus
 `~ age_point + antibiotics + gender + (1 | subject_id)`.
 
 Furthermore, because the abundance data are proportions (and not counts), we
-must set `data.type = "relabundance"`. Moreover, because our data does not 
+must set `data.type = "relabundance"`. Moreover, because our data does not
 contain sequencing (read) depth information, we cannot control for it in the
 model, and must thus set `read.depth = FALSE`.
 
 Lastly, we set `niter = 1000`. This argument tells the number of MCMC samples
 used to approximate the posterior distribution of the model parameters. A
 higher value gives more accurate estimates, but also increases the computation
-time. The default `niter = 2000` should be enough in almost any case, but 
+time. The default `niter = 2000` should be enough in almost any case, but
 `niter = 1000` is often sufficient. A potentially too low
 number of MCMC iterations would be indicated by the model diagnostics.
 
@@ -310,7 +299,7 @@ number of MCMC iterations would be indicated by the model diagnostics.
 fit_long <- dipper(
     tse = VatanenT_2016_subset,
     formula = ~ age_point + antibiotics + gender + (1 | subject_id),
-    assay.type = "relative_abundance",
+    assay.type = "relative_abundance", # Name of the assay
     data.type = "relabundance",
     read.depth = FALSE,
     niter = 1000
@@ -322,13 +311,19 @@ fit_long <- dipper(
 fit_long <- readRDS(cache_file("fit_vatanen.rds"))
 ```
 
-Note that the model diagnostics ("All MCMC diagnostics are within acceptable
-limits.") indicate that the MCMC sampling has converged well, and that
-`niter = 1000` was thus enough.
+```{r diagnostics_note, eval=run_fit, echo=FALSE, results="asis"}
+# Shown only when the model was actually fitted above, as the diagnostic
+# message is not printed when a pre-computed fit is loaded instead.
+cat(
+    "Note that the model diagnostics (\"All MCMC diagnostics are within",
+    "acceptable limits.\") indicate that the MCMC sampling has converged",
+    "well, and that `niter = 1000` was thus enough.\n"
+)
+```
 
 Finally, we extract the results (for `age_point`) and create a forest plot
 showing only the significant taxa. As expected, the prevalence of several taxa
-increases with infant age, although the prevalence of *Staphylococcus* 
+increases with infant age, although the prevalence of *Staphylococcus*
 decreases.
 
 ```{r plot_vatanen, eval=show_res, out.width="100%"}

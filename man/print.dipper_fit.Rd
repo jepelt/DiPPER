@@ -17,3 +17,9 @@ The object \code{x} invisibly.
 \description{
 Print a summary of a DiPPER model fit
 }
+\examples{
+# Load pre-run model fit for the example dataset (tse_hintikka)
+data("fit_example")
+
+print(fit_example)
+}

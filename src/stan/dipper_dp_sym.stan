@@ -1,7 +1,7 @@
 data {
   int<lower=0> N;                 // Number of samples
   int<lower=0> K;                 // Number of taxa/features
-  int<lower=0> P;                 // Number of predictors (incl. intercept)
+  int<lower=0> P;                 // Number of predictors (excl. intercept)
   array[K, N] int<lower=0, upper=1> y; // Presence/absence matrix
   matrix[N, P] X;                 // Design matrix
 

@@ -14,6 +14,9 @@ A \code{TreeSummarizedExperiment} object.
 }
 }
 \source{
+Derived from the \code{HintikkaXOData} dataset in the
+\code{mia} package. See \code{inst/scripts/tse_hintikka.R} for how the
+subset was derived. Original study:
 \url{https://www.mdpi.com/1660-4601/18/8/4049}
 }
 \usage{
@@ -24,6 +27,6 @@ A \code{TreeSummarizedExperiment} object containing a subset of gut
 microbiome data from an experiment studying the effects of a high-fat
 diet and xylo-oligosaccharide (XOS) supplementation on rats (N = 20 + 20).
 The abundance data are sequencing counts and they have been agglomerated
-to the genus level.
+to the genus level.z
 }
 \keyword{datasets}

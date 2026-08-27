@@ -7,7 +7,7 @@
 \method{summary}{dipper_fit}(
   object,
   prob = 0.95,
-  scale = c("log_odds", "odds_ratio"),
+  or.scale = c("log_odds", "odds_ratio"),
   original.scale = TRUE,
   ...
 )
@@ -19,8 +19,8 @@
 confidence level in frequentist statistics). Default is 0.95 (i.e.,
 95 percent credible intervals are produced).}
 
-\item{scale}{Character string indicating the scale of the estimates. Either
-\code{"log_odds"} (default) or \code{"odds_ratio"}.}
+\item{or.scale}{Character string indicating the scale of the estimates.
+Either \code{"log_odds"} (default) or \code{"odds_ratio"}.}
 
 \item{original.scale}{Logical. If \code{TRUE} (default), continuous
 covariates are back-transformed to their original scale. If \code{FALSE},
@@ -57,8 +57,8 @@ parameters (beta) of the variable of interest.
 Note that as the boundaries of the credible intervals depend on the
 \code{prob} level, so does the \code{significant} logical flag.
 
-\code{max_prob} is the maximum of the posterior probabilities that the
-parameter is strictly positive or strictly negative. Consequently, it
+\code{pseudo_q} is two times the minimum of the posterior probabilities that
+the parameter is strictly positive or strictly negative. Consequently, it
 indicates the highest "significance level" at which the result would be
 considered "statistically significant" (i.e., the credible interval
 excluding zero). It thus bears some resemblance to a multiplicity-adjusted
@@ -67,8 +67,6 @@ statistical interpretation. Due to the finite number of posterior draws,
 zero values are replaced with \code{0.5 * (1 / n_draws)}.
 }
 \examples{
-library(DiPPER)
-
 # Load pre-run model fit for the example dataset (tse_hintikka)
 data("fit_example")
 
@@ -77,6 +75,6 @@ res_log <- summary(fit_example)
 head(res_log)
 
 # Summarize on odds ratio scale with 90 percent interval
-res_or <- summary(fit_example, prob = 0.90, scale = "odds_ratio")
+res_or <- summary(fit_example, prob = 0.90, or.scale = "odds_ratio")
 head(res_or)
 }

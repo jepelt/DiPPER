@@ -19,13 +19,15 @@ ranked by pseudo_q, see \code{\link{summary.dipper_fit}}). Default is
 "significant".}
 
 \item{original.scale}{Logical. If \code{TRUE} (default), continuous
-covariates are back-transformed to their original scale. If \code{FALSE},
-results are presented per one standard deviation increase.}
+variable of interest is back-transformed to their original scale. If
+\code{FALSE}, results are presented per one standard deviation increase.
+Ignored for categorical variable of interest.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-A \code{ggplot} object.
+A \code{ggplot} object or NULL (invisibly) if no taxa remain after
+filtering.
 }
 \description{
 Plot method for DiPPER fit objects
@@ -42,8 +44,6 @@ Note that the significance is determined by whether the
 thus affected by the \code{prob} level.
 }
 \examples{
-library(DiPPER)
-
 # Load pre-run model fit for the example dataset (tse_hintikka)
 data("fit_example")
 

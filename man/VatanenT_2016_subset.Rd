@@ -15,8 +15,11 @@ A \code{TreeSummarizedExperiment} object.
 }
 }
 \source{
-Data obtained via the \code{curatedMetagenomicData} R package.
-Original study: \url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/}
+Derived from the \code{VatanenT_2016} study, obtained via the
+\code{curatedMetagenomicData} package. See
+\code{inst/scripts/VatanenT_2016_subset.R} for how the subset was
+derived. Original study:
+\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4950857/}
 }
 \usage{
 data(VatanenT_2016_subset)

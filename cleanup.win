@@ -29,3 +29,16 @@ if [ -d "bin" ]; then
   rm -rf bin
 fi
 
+# Remove the Stan models compiled by src/install.libs.R, keeping only the
+# .stan source files. Without this, the binaries built while R CMD build
+# installs the package for vignette rendering end up in the tarball.
+if [ -d "src/stan" ]; then
+  for f in src/stan/*; do
+    case "$f" in
+      *.stan) ;;
+      "src/stan/*") ;;
+      *) rm -f "$f" ;;
+    esac
+  done
+fi
+
