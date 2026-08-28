@@ -12,7 +12,8 @@
     if (!is.null(tse)) {
         if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
             stop(
-                "Package 'SummarizedExperiment' is required for TSE objects.",
+                "Package 'SummarizedExperiment' is required for",
+                "SummarizedExperiment and TreeSummarizedExperiment input.",
                 call. = FALSE
             )
         }
@@ -483,7 +484,7 @@
 
 #' Prepare data for DiPPER
 #'
-#' @param tse A TreeSummarizedExperiment object.
+#' @param tse A (Tree)SummarizedExperiment object.
 #' @param formula Model formula.
 #' @param assay A matrix containing counts, relative abundances, or
 #'   presence/absence data (required if tse is NULL). Rows should be

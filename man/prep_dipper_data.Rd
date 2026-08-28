@@ -19,7 +19,7 @@ prep_dipper_data(
 )
 }
 \arguments{
-\item{tse}{A TreeSummarizedExperiment object.}
+\item{tse}{A (Tree)SummarizedExperiment object.}
 
 \item{formula}{Model formula.}
 

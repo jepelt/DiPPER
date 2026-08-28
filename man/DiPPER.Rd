@@ -40,7 +40,7 @@ dipper(
 )
 }
 \arguments{
-\item{tse}{A TreeSummarizedExperiment object.}
+\item{tse}{A (Tree)SummarizedExperiment object.}
 
 \item{formula}{Model formula.}
 
@@ -185,7 +185,7 @@ interest. The hierarchical structure guarantees robust (and always finite)
 differential prevalence estimates and uncertainty intervals that are also
 effectively multiplicity-adjusted.
 
-The \code{dipper} function takes either a \code{TreeSummarizedExperiment}
+The \code{dipper} function takes either a \code{(Tree)SummarizedExperiment}
 object or an abundance matrix and a metadata \code{data.frame} as input. The
 abundance matrix can be either counts (default), relative abundances, or
 presence/absence data. This is indicated by the \code{data.type} argument.

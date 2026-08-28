@@ -1,36 +1,41 @@
-# Method tests using the pre-computed fit_example object.
+# Method tests for summary, plot and print functions. These tests use the
+# pre-computed fit_example dipper_fit object.
 
 test_that("summary.dipper_fit returns a well-formed data.frame", {
 
     data("fit_example", package = "DiPPER")
 
+    # Summary object should be a data.frame with one row per taxon and the
+    # columns taxon, log_or, lwr, upr, significant, and pseudo_q. The column
+    # significant should be logical.
     res <- summary(fit_example)
 
     expect_s3_class(res, "data.frame")
+    expect_equal(nrow(res), fit_example$dipper_data$K)
     expect_named(
         res,
         c("taxon", "log_or", "lwr", "upr", "significant", "pseudo_q")
     )
-    expect_equal(nrow(res), fit_example$dipper_data$K)
     expect_type(res$significant, "logical")
 
-    # The credible interval brackets the point estimate
+    # Each credible interval includes the point estimate
     expect_true(all(res$lwr <= res$log_or))
     expect_true(all(res$log_or <= res$upr))
 
-    # Sorted by pseudo_q, which is a probability-like quantity
+    # The data.frame should be sorted by pseudo_q which should lie in the
+    # interval (0, 1).
     expect_false(is.unsorted(res$pseudo_q))
     expect_true(all(res$pseudo_q > 0 & res$pseudo_q <= 1))
-
-    # 'significant' agrees with the interval excluding zero
-    expect_equal(res$significant, res$lwr > 0 | res$upr < 0)
 })
 
 
+# Test for probability mass (prob) and the scale (or.scale) for results
+# (log(OR) or OR)
 test_that("summary.dipper_fit respects prob and or.scale", {
 
     data("fit_example", package = "DiPPER")
 
+    # The results in the default log(OR) scale (or.scale = log_odds).
     res_95 <- summary(fit_example)
     res_50 <- summary(fit_example, prob = 0.50)
 
@@ -39,14 +44,19 @@ test_that("summary.dipper_fit respects prob and or.scale", {
         all((res_50$upr - res_50$lwr) <= (res_95$upr - res_95$lwr) + 1e-8)
     )
 
+    # The results expressed in the odds ratio scale.
     res_or <- summary(fit_example, or.scale = "odds_ratio")
 
     expect_true("odds_ratio" %in% names(res_or))
     expect_false("log_or" %in% names(res_or))
+
+    # ORs should always be positive
     expect_true(all(res_or$odds_ratio > 0))
+
+    # The OR is the exponentiated log(OR)
     expect_equal(res_or$odds_ratio, exp(res_95$log_or))
 
-    # Significance is determined on the log-odds scale either way
+    # Significance should be independent of the used scale
     expect_equal(res_or$significant, res_95$significant)
 })
 
@@ -58,15 +68,18 @@ test_that("plot.dipper_fit returns a ggplot object", {
     p <- plot(fit_example, show.taxa = "all")
 
     expect_s3_class(p, "ggplot")
+
+    # The data should have one row per taxon/feature, i.e. the same number of
+    # rows as the original abundance data.
     expect_equal(nrow(p$data), fit_example$dipper_data$K)
 
-    # Top-k selection keeps exactly k taxa
+    # Selecting Top-k taxa keeps exactly k taxa
     p_top <- plot(fit_example, show.taxa = 5)
     expect_equal(nrow(p_top$data), 5)
 })
 
 
-test_that("print.dipper_fit works without CmdStan", {
+test_that("print.dipper_fit works on a saved fit object", {
 
     data("fit_example", package = "DiPPER")
 
@@ -90,7 +103,7 @@ test_that("fit_example has the documented structure", {
         c("draws", "dipper_data", "symmetric", "diagnostics")
     )
 
-    # No CmdStanR object, so the fit loads on machines without cmdstanr
+    # The fit_example should not contain the CmdStanR object
     expect_false("stanfit" %in% names(fit_example))
 
     # Diagnostics survive serialisation, and carry everything print() needs

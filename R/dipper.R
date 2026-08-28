@@ -25,7 +25,7 @@
 #' differential prevalence estimates and uncertainty intervals that are also
 #' effectively multiplicity-adjusted.
 #'
-#' The \code{dipper} function takes either a \code{TreeSummarizedExperiment}
+#' The \code{dipper} function takes either a \code{(Tree)SummarizedExperiment}
 #' object or an abundance matrix and a metadata \code{data.frame} as input. The
 #' abundance matrix can be either counts (default), relative abundances, or
 #' presence/absence data. This is indicated by the \code{data.type} argument.
