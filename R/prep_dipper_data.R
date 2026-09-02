@@ -298,7 +298,7 @@
         meta_df$log10_read.depth <- log10(colSums(raw_mat))
         read.depth.var <- "log10_read.depth"
 
-        formula_str <- deparse(fixed_formula)
+        formula_str <- paste(deparse(fixed_formula), collapse = " ")
         if (!grepl("log10_read.depth", formula_str)) {
             formula <- stats::update(formula, ~ . + log10_read.depth)
             fixed_formula <- stats::update(
