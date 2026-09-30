@@ -6,13 +6,13 @@
 \usage{
 dipper(
   tse = NULL,
-  formula,
+  assay.type = NULL,
   assay = NULL,
   meta = NULL,
-  assay.type = NULL,
-  data.type = c("counts", "relabundance", "pa"),
+  data.type = NULL,
+  formula,
   var.of.interest = NULL,
-  read.depth = TRUE,
+  read.depth = NULL,
   symmetric = FALSE,
   threshold = 0,
   min.present = 5,
@@ -25,10 +25,11 @@ dipper(
   max.treedepth = 10,
   run.diagnostics = TRUE,
   diagnostics.level = c("basic", "full"),
-  keep.pars = "beta",
+  keep.pars = c("beta", "tau", "nu"),
   keep.stanfit = FALSE,
   seed = 1,
   print.progress = 200,
+  verbose = TRUE,
   prior.alpha.sd = 4,
   prior.tau.sd = 1,
   prior.nu.sd = 0.05,
@@ -42,37 +43,63 @@ dipper(
 \arguments{
 \item{tse}{A (Tree)SummarizedExperiment object.}
 
-\item{formula}{Model formula.}
-
-\item{assay}{A matrix containing counts, relative abundances, or
-presence/absence data (required if tse is NULL). Rows should be
-taxa/features, columns should be samples.}
-
-\item{meta}{A data.frame containing metadata (required if tse is NULL).}
-
 \item{assay.type}{Character. Name of the assay in the TSE object to use.
 Required if tse is provided.}
 
-\item{data.type}{Character. Type of the data: "counts" (default),
-"relabundance", or "pa" (presence/absence).}
+\item{assay}{A matrix containing counts, relative abundances, other
+non-negative abundances, or presence/absence data (required if tse is
+NULL). Rows should be taxa/features, columns should be samples.}
+
+\item{meta}{A data.frame containing metadata (required if tse is NULL).}
+
+\item{data.type}{Character. Type of the data. Required, one of:
+\itemize{
+\item \code{"counts"}: sequencing read counts (non-negative integers).
+\item \code{"relabundance"}: relative abundances (values between 0 and 1,
+with sample sums at most 1).
+\item \code{"abundance"}: any other non-negative abundances, such as
+pathway abundances, CPM or TPM values.
+\item \code{"pa"}: presence/absence data (0s and 1s).
+}
+Transformed data with negative values (e.g. CLR or log) are not
+supported, because presence and absence cannot be determined from them.}
+
+\item{formula}{Model formula.}
 
 \item{var.of.interest}{The variable of interest from the formula.
 If NULL, the first term of the formula is automatically used.}
 
-\item{read.depth}{Logical or character. If TRUE, calculates log10 read depth
-from counts. If character, uses the specified metadata column.}
+\item{read.depth}{How to control for sequencing read depth. Required for
+\code{data.type = "counts"}; for other data types the default (NULL)
+means that read depth is not controlled for. One of:
+\itemize{
+\item \code{TRUE}: read depth is computed as the sample totals.
+Requires \code{data.type = "counts"}. Use with non-rarefied
+sequencing counts.
+\item A metadata column name: read depths are taken from the specified
+column, e.g. read depths computed before filtering. Give the read
+depths on their original scale (numbers of reads), and do not
+include the column in \code{formula}.
+\item \code{FALSE}: read depth is not controlled for, e.g. for rarefied
+data.
+}
+With \code{TRUE} or a column name, read depth is automatically
+log10-transformed and added to the model as the covariate
+\code{log10_read_depth}.}
 
-\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
-is used for the differential prevalence parameters of interest. If FALSE
-(default), the prior is allowed to be asymmetric.}
+\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5) is
+used for the differential prevalence parameters of interest. If FALSE
+(default), the asymmetry parameter nu is estimated from the data. See the
+Details section of \code{\link{dipper}} for guidance on choosing between
+the two.}
 
-\item{threshold}{Numeric or function. Threshold for presence.
-If between 0 and 1, the threshold is based on relative abundance (e.g.,
-0.05 means that relative abundances > 0.05 are considered present).
-If whole number, the threshold is based on counts (e.g. 5 means that
-count > 5 is considered present).
-If a function (e.g. median), it is applied for the given assay for each
-feature. Default is 0. Ignored if data.type is "pa".}
+\item{threshold}{Numeric or function. A feature is considered present in a
+sample if its value is greater than the threshold. The threshold is on
+the scale of the data: counts for \code{"counts"}, proportions for
+\code{"relabundance"}, and the original units for \code{"abundance"}.
+The default is 0, so a feature is absent only if its value is exactly
+zero. If a function (e.g. median), it is applied to each feature to
+obtain feature-specific thresholds. Ignored if data.type is \code{"pa"}.}
 
 \item{min.present}{For taxon/feature filtering. Minimum number or proportion
 of samples where a taxon must be present. Default is 5.}
@@ -90,12 +117,14 @@ Defaults to floor(niter / 2).}
 
 \item{cores}{Number of CPU cores to use. Default is 4.}
 
-\item{adapt.delta}{Target average acceptance probability. Default is 0.8.}
+\item{adapt.delta}{Target average acceptance probability in MCMC sampling.
+Default is 0.8.}
 
-\item{max.treedepth}{Maximum depth of the trees. Default is 10.}
+\item{max.treedepth}{Maximum depth of the trees in MCMC sampling. Default is
+10.}
 
 \item{run.diagnostics}{Logical. Whether to run convergence diagnostics
-after sampling. Default is TRUE.}
+after MCMC sampling. Default is TRUE.}
 
 \item{diagnostics.level}{Character. Level of MCMC diagnostics to run.
 "basic" (default) checks main parameters (alpha, beta, covariates,
@@ -104,9 +133,10 @@ hyperparameters).
 
 \item{keep.pars}{Character vector of Stan parameter names whose posterior
 draws are retained in the returned object, or NULL to retain all of them.
-The default, "beta", keeps only the differential prevalence parameters of
-the variable of interest, which is what \code{summary} and \code{plot}
-need. Note that this argument does not affect convergence diagnostics.}
+The default, \code{c("beta", "tau", "nu")}, keeps the differential
+prevalence parameters of the variable of interest together with the two
+hyperparameters of the hierarchical Laplace prior. \code{nu} is dropped
+automatically when \code{symmetric = TRUE}.}
 
 \item{keep.stanfit}{Logical. Whether to include the underlying CmdStanR
 fit R6 object in the returned object (e.g. for manual model fit checking).
@@ -115,7 +145,10 @@ Default is FALSE.}
 \item{seed}{Random seed for reproducibility. Default is 1.}
 
 \item{print.progress}{How often to print MCMC progress. Set to 0 or
-FALSE to disable. Default is 200.}
+FALSE to disable. Default is 200. Ignored if verbose = FALSE.}
+
+\item{verbose}{Logical. Whether to print progress messages. Default is
+TRUE.}
 
 \item{prior.alpha.sd}{Prior standard deviation for alpha (fixed intercept
 for centered variables). Default is 4.0.}
@@ -146,9 +179,9 @@ Default is 1.0.}
 A list object of class \code{dipper_fit} containing:
 \describe{
 \item{draws}{A matrix of posterior draws, with one row per MCMC draw and
-one column per retained parameter. By default only the draws of
-\code{beta} (the parameters of interest) are retained; see
-\code{keep.pars}.}
+one column per retained parameter. By default the draws of \code{beta}
+(the parameters of interest) and of the hierarchical prior parameters
+\code{tau} and \code{nu} are retained; see \code{keep.pars}.}
 \item{dipper_data}{A list containing the prepared data passed to Stan.}
 \item{symmetric}{Logical indicating if a symmetric Laplace prior for
 differential prevalence parameters was used.}
@@ -172,11 +205,10 @@ input data and then fits the model using CmdStanR.
 DiPPER is a Bayesian hierarchical model-based approach designed for
 differential prevalence analysis, especially for microbiome studies.
 It is designed for study designs where there is one
-\strong{variable of interest}
-(e.g. treatment group, disease status, etc.) and potentially other
-covariates (e.g. age, sex, etc.) that may confound the associations between
-microbe prevalences and the variable of interest. DiPPER can also be applied
-to longitudinal or repeated measures data.
+\strong{variable of interest} (e.g. treatment group, disease status, etc.)
+and potentially other covariates (e.g. age, sex, etc.) that may confound
+the associations between microbe prevalences and the variable of interest.
+DiPPER can also be applied to longitudinal or repeated measures data.
 
 Technically, DiPPER models the presence/absence of taxonomic features (e.g.
 genera or species) using multiple logistic regression models. The models are
@@ -185,51 +217,99 @@ interest. The hierarchical structure guarantees robust (and always finite)
 differential prevalence estimates and uncertainty intervals that are also
 effectively multiplicity-adjusted.
 
+\subsection{Input data and preprocessing}{
 The \code{dipper} function takes either a \code{(Tree)SummarizedExperiment}
-object or an abundance matrix and a metadata \code{data.frame} as input. The
-abundance matrix can be either counts (default), relative abundances, or
-presence/absence data. This is indicated by the \code{data.type} argument.
+object or an abundance matrix and a metadata \code{data.frame} as input.
+The abundance matrix can be sequencing counts, relative abundances, other
+non-negative abundances (e.g. pathway abundances), or presence/absence
+data. The \code{data.type} argument is required, as it determines how
+presence is defined and whether read depth can be derived from the data.
 
 Before model fitting, the input data undergoes automated preprocessing.
-Continuous abundance data (counts or relative abundances) are converted to
-presence/absence format based on the specified \code{threshold}. Furthermore,
-prevalence filtering is applied: taxa that are not present in at least
-\code{min.present} samples, or absent in at least \code{min.absent} samples,
-are excluded from the analysis.
+Continuous abundance data are converted to presence/absence format based on
+the specified \code{threshold}. By default, a feature is absent only if its
+value is exactly zero. Furthermore, prevalence filtering is applied: taxa
+that are not present in at least \code{min.present} samples, or absent in at
+least \code{min.absent} samples, are excluded from the analysis.
+}
 
+\subsection{Model formula and the variable of interest}{
 The \code{dipper} function uses the standard \code{formula} argument to
 specify the model formula. A possible random intercept is included in a
 standard lme4 style as the last term in the formula (e.g.
 \code{+ (1 | subject_id)}).
 
 By default, the first term in the \code{formula} is treated as the variable
-of interest. It is important to note that the hierarchical (Asymmetric)
-Laplace prior, and thus the automatic multiplicity adjustment, is applied
-exclusively to this variable.
+of interest, and the results are provided only for this variable. Any other
+term of the formula can be selected as the variable of interest with
+\code{var.of.interest}.
 
+The variable of interest must be either binary (a factor or character
+variable with exactly two levels) or continuous. The other variables in the
+model can, however, be factors with more than two levels.
+}
+
+\subsection{Controlling for read depth (\code{read.depth})}{
 As the observed presence/absence status of microbes may depend on the
-sequencing (read) depth, DiPPER by default controls for this. This is done
-automatically if a counts matrix is provided and \code{read.depth = TRUE}.
-If only relative abundances (proportions) are available, one must set
-\code{read.depth = FALSE} (or provide a separate sequencing depth variable).
+sequencing (read) depth, DiPPER can control for it by adding log10 read
+depth as a covariate. Because whether this is appropriate depends on
+preprocessing that DiPPER cannot detect, \code{read.depth} must be chosen
+explicitly for count data:
+\itemize{
+\item Use \code{TRUE} for non-rarefied sequencing counts.
+\item Give a metadata column name when the read depths were computed
+manually, e.g. before heavy filtering of the count data.
+\item Use \code{FALSE} when read depth is already accounted for, e.g. by
+rarefying the data.
+}
+For other data types, read depth cannot be derived from the abundances
+themselves, so it is controlled for only if a metadata column of
+pre-computed read depths is supplied.
+}
 
+\subsection{Symmetric or asymmetric prior (\code{symmetric})}{
 By default, \code{dipper} uses the Asymmetric Laplace prior as the
-hierarchical prior. This encodes an empirical observation that within a given
-microbiome study, most non-zero prevalence differences tend to share the same
-direction. However, this choice may sometimes lead to an undesirably strong
-bias in the estimates. Therefore, the user can choose to use a symmetric
-Laplace prior instead by setting \code{symmetric = TRUE}. This option gives
-generally more robust and/or conservative results that may be more in line
-with the results of standard (frequentist) approaches.
+hierarchical prior for the differential prevalence parameters of interest.
+This means that the (a)symmetry of the Laplace prior is estimated from the
+data. However, this choice may emphasize some technical biases in the data.
+This can occur, for instance, when read depth correlates with the variable
+of interest but one is not able to control for the read depth in the
+analysis. Therefore, if such technical biases are possible or likely, the
+user can choose to use a symmetric Laplace prior instead by setting
+\code{symmetric = TRUE}.
 
+The two versions often give rather similar results, but the symmetric
+version generally leads to slightly more robust and/or conservative results
+while the asymmetric version is more sensitive to detect small effects.
+
+The parameters of the hierarchical prior are reported by
+\code{\link{print.dipper_fit}}:
+\itemize{
+\item \code{nu} indicates the asymmetry. It is constrained between 0 and
+1, with 0.5 meaning symmetry, values below 0.5 indicating positive
+skewness and values above 0.5 negative skewness.
+\item \code{tau} is the prior scale, that is, small values mean that the
+differential prevalence parameters are shrunk strongly towards zero/each
+other.
+}
+
+If \code{nu} is clearly away from 0.5 (e.g. below 0.30 or above 0.70) and
+\code{tau} is at the same time small (e.g. < 0.10), the asymmetry of the
+prior may have a somewhat strong effect on the results. This may lead to a
+large number of \sQuote{significant} findings in the same direction. If one
+suspects that these findings may be due to some technical biases in the
+data, it may be advisable to use the symmetric version of DiPPER.
+}
+
+\subsection{MCMC sampling and prior settings}{
 The posterior distribution computation for DiPPER is performed using the
-Hamiltonian Monte Carlo algorithm via CmdStanR. The total number of posterior
-samples can be controlled via arguments \code{niter} and \code{chains}.
-Higher numbers lead to higher accuracy of the posterior statistics but
-increase the computation time. Nevertheless, the default values
-\code{niter = 2000} and \code{chains = 4} should be sufficient for most
-cases. Higher values are generally recommended only if indicated by the
-automatic MCMC diagnostics (e.g., too high R-hat values, or too low
+Hamiltonian Monte Carlo algorithm via CmdStanR. The total number of
+posterior samples can be controlled via arguments \code{niter} and
+\code{chains}. Higher numbers lead to higher accuracy of the posterior
+statistics but increase the computation time. Nevertheless, the default
+values \code{niter = 2000} and \code{chains = 4} should be sufficient for
+most cases. Higher values are generally recommended only if indicated by
+the automatic MCMC diagnostics (e.g., too high R-hat values, or too low
 effective sample sizes).
 
 Lastly, adjusting the default prior distribution settings
@@ -237,18 +317,21 @@ Lastly, adjusting the default prior distribution settings
 recommended unless the user is highly experienced with Bayesian modeling
 and the details of DiPPER.
 }
+}
 \examples{
 data("tse_hintikka")
 
 # Run DiPPER
-# Note: niter = 400, chains = 1 and cores = 1 are used here for speed.
-# In real applications, use higher values (e.g. the default niter = 2000,
-# chains = 4, and cores = 4).
+# Note: niter = 400, chains = 2 and cores = 2 are used here for speed, so
+# convergence warnings are expected. In real applications, use higher
+# values (e.g. the default niter = 2000, chains = 4, and cores = 4).
 if (instantiate::stan_cmdstan_exists()) {
     fit <- dipper(
         tse = tse_hintikka,
-        formula = ~ Fat + XOS,
         assay.type = "counts",
+        data.type = "counts",
+        formula = ~ Fat + XOS,
+        read.depth = TRUE,
         niter = 400,
         chains = 2,
         cores = 2

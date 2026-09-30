@@ -5,14 +5,18 @@ S3method(print,dipper_fit)
 S3method(summary,dipper_fit)
 export(dipper)
 import(ggplot2)
-importFrom(SummarizedExperiment,assay)
-importFrom(SummarizedExperiment,colData)
+importFrom(SummarizedExperiment,
+  assay,
+  colData
+)
 importFrom(TreeSummarizedExperiment,TreeSummarizedExperiment)
-importFrom(stats,as.formula)
-importFrom(stats,complete.cases)
-importFrom(stats,median)
-importFrom(stats,model.matrix)
-importFrom(stats,quantile)
-importFrom(stats,sd)
-importFrom(stats,terms)
-importFrom(stats,update)
+importFrom(stats,
+  as.formula,
+  complete.cases,
+  median,
+  model.matrix,
+  quantile,
+  sd,
+  terms,
+  update
+)

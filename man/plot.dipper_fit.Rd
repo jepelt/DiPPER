@@ -4,7 +4,14 @@
 \alias{plot.dipper_fit}
 \title{Plot method for DiPPER fit objects}
 \usage{
-\method{plot}{dipper_fit}(x, prob = 0.95, show.taxa = "significant", original.scale = TRUE, ...)
+\method{plot}{dipper_fit}(
+  x,
+  prob = 0.95,
+  show.taxa = "significant",
+  original.scale = TRUE,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{dipper_fit} object returned by \code{\link{dipper}}.}
@@ -22,6 +29,9 @@ ranked by pseudo_q, see \code{\link{summary.dipper_fit}}). Default is
 variable of interest is back-transformed to their original scale. If
 \code{FALSE}, results are presented per one standard deviation increase.
 Ignored for categorical variable of interest.}
+
+\item{verbose}{Logical. Whether to print a message when no taxa remain
+after filtering. Default is TRUE.}
 
 \item{...}{Additional arguments (currently ignored).}
 }

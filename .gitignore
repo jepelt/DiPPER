@@ -1,24 +1,27 @@
-.Rproj.user
+.Rproj.user/
 .Rhistory
 .RData
+.Ruserdata
 .httr-oauth
 .DS_Store
 .quarto
 .positai
-.Rproj.user/
 
 # DiPPER specific ignores
-data-raw/
 inst/stan/*.exe
 inst/stan/*.rds
 inst/stan/*.o
 inst/stan/*.hpp
-.Rproj.user
-.Rproj.user
-inst/doc
 src/stan/*.exe
 src/stan/*.o
 bin/stan/
+
+# build artefacts
+inst/doc/
+vignettes/*.html
+vignettes/*.knit.md
+vignettes/*.utf8.md
+vignettes/*_files/
 DiPPER.BiocCheck/
+*.Rcheck/
 *.tar.gz
-*.Rcheck

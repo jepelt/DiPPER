@@ -6,54 +6,82 @@
 \usage{
 prep_dipper_data(
   tse = NULL,
-  formula,
+  assay.type = NULL,
   assay = NULL,
   meta = NULL,
-  assay.type = NULL,
-  data.type = c("counts", "relabundance", "pa"),
+  data.type = NULL,
+  formula,
   var.of.interest = NULL,
-  read.depth = TRUE,
+  read.depth = NULL,
   threshold = 0,
   min.present = 5,
-  min.absent = min.present
+  min.absent = min.present,
+  verbose = TRUE
 )
 }
 \arguments{
 \item{tse}{A (Tree)SummarizedExperiment object.}
 
-\item{formula}{Model formula.}
-
-\item{assay}{A matrix containing counts, relative abundances, or
-presence/absence data (required if tse is NULL). Rows should be
-taxa/features, columns should be samples.}
-
-\item{meta}{A data.frame containing metadata (required if tse is NULL).}
-
 \item{assay.type}{Character. Name of the assay in the TSE object to use.
 Required if tse is provided.}
 
-\item{data.type}{Character. Type of the data: "counts" (default),
-"relabundance", or "pa" (presence/absence).}
+\item{assay}{A matrix containing counts, relative abundances, other
+non-negative abundances, or presence/absence data (required if tse is
+NULL). Rows should be taxa/features, columns should be samples.}
+
+\item{meta}{A data.frame containing metadata (required if tse is NULL).}
+
+\item{data.type}{Character. Type of the data. Required, one of:
+\itemize{
+\item \code{"counts"}: sequencing read counts (non-negative integers).
+\item \code{"relabundance"}: relative abundances (values between 0 and 1,
+with sample sums at most 1).
+\item \code{"abundance"}: any other non-negative abundances, such as
+pathway abundances, CPM or TPM values.
+\item \code{"pa"}: presence/absence data (0s and 1s).
+}
+Transformed data with negative values (e.g. CLR or log) are not
+supported, because presence and absence cannot be determined from them.}
+
+\item{formula}{Model formula.}
 
 \item{var.of.interest}{The variable of interest from the formula.
 If NULL, the first term of the formula is automatically used.}
 
-\item{read.depth}{Logical or character. If TRUE, calculates log10 read depth
-from counts. If character, uses the specified metadata column.}
+\item{read.depth}{How to control for sequencing read depth. Required for
+\code{data.type = "counts"}; for other data types the default (NULL)
+means that read depth is not controlled for. One of:
+\itemize{
+\item \code{TRUE}: read depth is computed as the sample totals.
+Requires \code{data.type = "counts"}. Use with non-rarefied
+sequencing counts.
+\item A metadata column name: read depths are taken from the specified
+column, e.g. read depths computed before filtering. Give the read
+depths on their original scale (numbers of reads), and do not
+include the column in \code{formula}.
+\item \code{FALSE}: read depth is not controlled for, e.g. for rarefied
+data.
+}
+With \code{TRUE} or a column name, read depth is automatically
+log10-transformed and added to the model as the covariate
+\code{log10_read_depth}.}
 
-\item{threshold}{Numeric or function. Threshold for presence.
-If between 0 and 1, the threshold is based on relative abundance (e.g.,
-0.05 means that relative abundances > 0.05 are considered present).
-If whole number, the threshold is based on counts (e.g. 5 means that
-count > 5 is considered present).
-If a function (e.g. median), it is applied for the given assay for each
-feature. Default is 0. Ignored if data.type is "pa".}
+\item{threshold}{Numeric or function. A feature is considered present in a
+sample if its value is greater than the threshold. The threshold is on
+the scale of the data: counts for \code{"counts"}, proportions for
+\code{"relabundance"}, and the original units for \code{"abundance"}.
+The default is 0, so a feature is absent only if its value is exactly
+zero. If a function (e.g. median), it is applied to each feature to
+obtain feature-specific thresholds. Ignored if data.type is \code{"pa"}.}
 
 \item{min.present}{For taxon/feature filtering. Minimum number or proportion
 of samples where a taxon must be present. Default is 5.}
 
 \item{min.absent}{For taxon/feature filtering. Minimum number or proportion
 of samples where a taxon must be absent. Default is min.present.}
+
+\item{verbose}{Logical. Whether to print progress messages. Default is
+TRUE.}
 }
 \description{
 Prepare data for DiPPER

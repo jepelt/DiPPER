@@ -12,6 +12,8 @@
 #'   variable of interest is back-transformed to their original scale. If
 #'   \code{FALSE}, results are presented per one standard deviation increase.
 #'   Ignored for categorical variable of interest.
+#' @param verbose Logical. Whether to print a message when no taxa remain
+#'   after filtering. Default is TRUE.
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @details
@@ -41,7 +43,7 @@
 #' # Plot the results for all taxa and use 90 percent credible intervals
 #' plot(fit_example, prob = 0.90, show.taxa = "all")
 plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
-                            original.scale = TRUE, ...) {
+                            original.scale = TRUE, verbose = TRUE, ...) {
 
     if (!inherits(x, "dipper_fit")) {
         stop("Input must be a 'dipper_fit' object.", call. = FALSE)
@@ -109,8 +111,7 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
 
     # 3. Map indices to taxa names
     regex_pat <- "^beta\\[([0-9]+)\\]$"
-    idx_str <- gsub(regex_pat, "\\1", summ$variable)
-    idx <- suppressWarnings(as.integer(idx_str))
+    idx <- as.integer(sub(regex_pat, "\\1", summ$variable))
 
     if (all(!is.na(idx)) && max(idx) <= length(taxa)) {
         summ$taxon <- taxa[idx]
@@ -123,8 +124,13 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
     if (is.character(show.taxa) && show.taxa == "significant") {
         plot_df <- plot_df[(plot_df$lower > 1 | plot_df$upper < 1), ]
         if (nrow(plot_df) == 0) {
-            message("No significant taxa found. Returning empty plot.\n",
-                    "Consider using lower 'prob' or 'show.taxa = \"all\"'.")
+            if (verbose) {
+                message(
+                    "No significant taxa found. Returning empty plot.\n",
+                    "Consider using lower 'prob' or ",
+                    "'show.taxa = \"all\"'."
+                )
+            }
             return(invisible(NULL))
         }
     } else if (is.numeric(show.taxa)) {
@@ -144,9 +150,8 @@ plot.dipper_fit <- function(x, prob = 0.95, show.taxa = "significant",
     if (!is.null(var_levels) && length(var_levels) >= 2) {
         ref_lvl <- var_levels[1]
 
-        if (effect_name != var_int &&
-            grepl(paste0("^", var_int), effect_name)) {
-            comp_lvl <- sub(paste0("^", var_int), "", effect_name)
+        if (effect_name != var_int && startsWith(effect_name, var_int)) {
+            comp_lvl <- substring(effect_name, nchar(var_int) + 1L)
         } else {
             comp_lvl <- effect_name
         }

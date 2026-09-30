@@ -90,8 +90,6 @@ summary.dipper_fit <- function(object,
         stop("The fit object contains no posterior draws.", call. = FALSE)
     }
 
-    # Keep only beta, since a fit made with keep.pars = NULL also carries the
-    # covariate and latent parameters.
     beta_cols <- grep("^beta\\[", colnames(draws))
     if (length(beta_cols) == 0) {
         stop("No draws of 'beta' found in the fit object. It was fitted ",

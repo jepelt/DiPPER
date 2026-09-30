@@ -17,6 +17,13 @@ The object \code{x} invisibly.
 \description{
 Print a summary of a DiPPER model fit
 }
+\details{
+The hierarchical prior line indicates the type of the chosen hierarchical
+prior (symmetric or asymmetric) and its hyperparameters with their 90 percent
+credible intervals. (For a symmetric fit, \code{nu} is fixed at 0.5.) See the
+\sQuote{Symmetric or asymmetric prior} section in \code{\link{dipper}} for
+how to interpret these values and when a symmetric prior may be preferable.
+}
 \examples{
 # Load pre-run model fit for the example dataset (tse_hintikka)
 data("fit_example")

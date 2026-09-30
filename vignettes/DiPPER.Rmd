@@ -94,8 +94,8 @@ limitations that DiPPER aims to solve:
   confidence intervals unadjusted). In contrast, multiplicity adjustment in
   DiPPER occurs naturally via hierarchical shrinkage. The differential
   prevalence parameters are assumed to originate from a common (Asymmetric)
-  Laplace prior distribution. This shrinks the estimates toward zero and toward
-  each other, providing effectively multiplicity-adjusted estimates and
+  Laplace prior distribution. This shrinks the estimates toward zero (and toward
+  each other), providing effectively multiplicity-adjusted estimates and
   intervals that can directly be used to assign "statistical significance".
 
 ## Benchmarking results against alternative methods
@@ -145,9 +145,7 @@ cmdstanr::install_cmdstan()
 
 ## Bioconductor dependencies and DiPPER
 
-Once CmdStan is ready, you can install the development version of DiPPER.
-Using `BiocManager` for the installation automatically installs all required
-Bioconductor dependencies.
+Once CmdStan is ready, you can install DiPPER.
 
 *Note: DiPPER compiles its Stan models during installation, which may take a
 few minutes and produce verbose output. This is expected, and it is done only
@@ -159,8 +157,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
     install.packages("BiocManager")
 }
 
-# Install DiPPER from GitHub
-BiocManager::install("jepelt/DiPPER")
+BiocManager::install("DiPPER")
 ```
 
 
@@ -172,12 +169,17 @@ diet (`Fat`) while controlling for xylo-oligosaccharide (`XOS`)
 supplementation. The dataset originates from
 [Hintikka et al. (2021)](https://www.mdpi.com/1660-4601/18/8/4049).
 
-We run DiPPER with its default settings. We only need to provide the dataset,
-the model formula, and the name of the assay containing the count data
-(`assay.type = "counts"`). Note that the *variable of interest* (here `Fat`)
-must be set as the *first* variable in the model formula. Note also that DiPPER
-by default automatically computes and controls for the library size (sequencing
-depth) in the model.
+To run DiPPER, we need to provide
+
+- TSE object (`tse = tse_hintikka`)
+- Name of the assay (`assay.type = "counts"`)
+- Type of data in the assay. As our data consist of sequencing counts we set
+  `data.type = "counts"`.
+- Model formula: `formula = ~ Fat + XOS`. By default, the first term (here
+  `Fat`) is the *variable of interest* (another term can be chosen with
+  `var.of.interest`).
+- As our data consist of sequencing counts, it is recommended to control for
+  sequencing depth by setting `read.depth = TRUE`.
 
 ```{r quick_start, eval=run_fit}
 library(DiPPER)
@@ -185,11 +187,13 @@ library(DiPPER)
 # Load dataset (TreeSummarizedExperiment object)
 data("tse_hintikka")
 
-# Run DiPPER with the default settings
+# Run DiPPER
 fit <- dipper(
     tse = tse_hintikka,
+    assay.type = "counts",
+    data.type = "counts",
     formula = ~ Fat + XOS,
-    assay.type = "counts"
+    read.depth = TRUE
 )
 ```
 
@@ -197,6 +201,12 @@ fit <- dipper(
 # CmdStan is not available on this machine: use the pre-computed fit instead
 library(DiPPER)
 fit <- readRDS(cache_file("fit_hintikka.rds"))
+```
+
+We first print the details of the DiPPER run:
+
+```{r quick_print, eval=show_res}
+print(fit)
 ```
 
 Next, we extract the summarized results as a `data.frame` and print the first
@@ -284,25 +294,16 @@ as a random intercept term: `(1 | subject_id)`. Our formula is thus
 `~ age_point + antibiotics + gender + (1 | subject_id)`.
 
 Furthermore, because the abundance data are proportions (and not counts), we
-must set `data.type = "relabundance"`. Moreover, because our data does not
-contain sequencing (read) depth information, we cannot control for it in the
-model, and must thus set `read.depth = FALSE`.
-
-Lastly, we set `niter = 1000`. This argument tells the number of MCMC samples
-used to approximate the posterior distribution of the model parameters. A
-higher value gives more accurate estimates, but also increases the computation
-time. The default `niter = 2000` should be enough in almost any case, but
-`niter = 1000` is often sufficient. A potentially too low
-number of MCMC iterations would be indicated by the model diagnostics.
+must set `data.type = "relabundance"`. Moreover, they carry no information about
+sequencing depth, so we set `read.depth = FALSE`.
 
 ```{r assay_vatanen, eval=run_fit}
 fit_long <- dipper(
     tse = VatanenT_2016_subset,
-    formula = ~ age_point + antibiotics + gender + (1 | subject_id),
     assay.type = "relative_abundance", # Name of the assay
     data.type = "relabundance",
-    read.depth = FALSE,
-    niter = 1000
+    formula = ~ age_point + antibiotics + gender + (1 | subject_id),
+    read.depth = FALSE
 )
 ```
 
@@ -311,28 +312,104 @@ fit_long <- dipper(
 fit_long <- readRDS(cache_file("fit_vatanen.rds"))
 ```
 
-```{r diagnostics_note, eval=run_fit, echo=FALSE, results="asis"}
-# Shown only when the model was actually fitted above, as the diagnostic
-# message is not printed when a pre-computed fit is loaded instead.
-cat(
-    "Note that the model diagnostics (\"All MCMC diagnostics are within",
-    "acceptable limits.\") indicate that the MCMC sampling has converged",
-    "well, and that `niter = 1000` was thus enough.\n"
-)
-```
-
 Finally, we extract the results (for `age_point`) and create a forest plot
 showing only the significant taxa. As expected, the prevalence of several taxa
 increases with infant age, although the prevalence of *Staphylococcus*
 decreases.
 
 ```{r plot_vatanen, eval=show_res, out.width="100%"}
+# Print the details of the run
+print(fit_long)
+
 # Extract the results for age_point
-res2 <- summary(fit_long)
+res_long <- summary(fit_long)
+res_long[1:7, ]
 
 # Create a forest plot for significant taxa
 plot(fit_long)
 ```
+
+# Input data and other settings
+
+## Type of abundance data
+
+The type of input abundance data, i.e., `data.type`, must be provided. This is
+to enable `dipper()` to derive presence/absence information, and optionally, to
+calculate sequencing depth correctly. The following values are accepted:
+
+- **`"counts"`**: sequencing read counts (non-negative integers). The most
+  typical format for 16S and shotgun data. It is preferable to use this option
+  if you have read count data available, as these data can be used to
+  automatically compute and control for the sequencing depth (read depth) in
+  the analysis.
+- **`"relabundance"`**: relative abundances, that is, proportions between 0
+  and 1 whose sample sums are at most 1. Tools such as MetaPhlAn report these
+  directly.
+- **`"abundance"`**: any other non-negative abundances, for example, CPM or TPM
+  values.
+- **`"pa"`**: presence/absence data expressed as 0s and 1s. Use this whenever
+  you want to define presence and absence values yourself.
+
+Transformed values, such as CLR- or log-transformed assays, are **not**
+supported, as DiPPER cannot derive presence/absence information from them.
+
+
+## Controlling for sequencing (read) depth
+
+Whether a feature/taxon is observed in a sample depends partly on how deeply
+the sample was sequenced. Therefore, it is advisable to control for the
+sequencing/read depth in the analysis whenever possible. DiPPER can compute the
+read depth itself when sequencing count data are provided. The user can also
+provide the read depths as a metadata column.
+
+Whether read depth is controlled for is determined by the `read.depth`
+argument. For sequencing count data (`data.type = counts`) there is
+no default, because DiPPER cannot detect how the data have been
+preprocessed.
+
+- **`read.depth = TRUE`** computes read depth as the sample totals from the
+  provided sequencing count data. Use this with non-rarefied sequencing counts.
+  (Requires `data.type = "counts"`.)
+- **`read.depth = "column_name"`** takes the read depths from a metadata
+  column. Use this whenever you have computed the read depths yourself.
+- **`read.depth = FALSE`** leaves read depth out of the model. Use this
+  with rarefied data, or when sequencing depth infromation is not available.
+  (The default for every `data.type` other than `"counts"`.)
+
+When `read.depth = TRUE` or a metadata column is provided, `dipper()` applies a
+log10 transformation to the read depths and adds the variable to the model.
+The variable can be seen in the `print()` output as the `log10_read_depth` term
+in the model formula.
+
+
+## Symmetric or asymmetric hierarchical prior
+
+By default DiPPER uses a hierarchical Asymmetric Laplace prior for the
+differential prevalence parameters of interest (`symmetric = FALSE`). This
+means that the prior is allowed to be asymmetric and the degree of
+asymmetry is estimated from the data. Optionally, the user can set
+`symmetric = TRUE` when the prior is fixed to be symmetric around zero.
+
+In most cases, the symmetric and asymmetric option yield rather similar results
+but the symmetric option generally provides slightly more conservative results.
+
+In the case of strong asymmetry the prior pulls the differential prevalence
+estimates not only towards zero, but also towards each other. Consequently, in
+such cases, DiPPER induces a small bias to the estimates (e.g. all estimates
+may have the same sign). While this bias may seem suspicious, and it may yield
+a few additional false positives, it should also lead to clearly higher power
+to detect true effects.
+
+It is generally recommended to first run DiPPER with the default setting
+`symmetric = FALSE`. The estimated values of the hyperparameters of the prior
+can then be read from the `Hierarchical prior` line of the `print()` output,
+where `tau` is the prior scale and `nu` indicates the asymmetry (`nu` is
+constrained between 0 and 1, with 0.5 meaning symmetry). Now, if `nu` is
+clearly away from 0.5 (e.g. below 0.30 or above 0.70) **and** `tau` is at the
+same time small (e.g. < 0.10), the asymmetry of the prior may have a somewhat
+strong effect on the results. **If** in such a case the user suspects that the
+results are driven by some technical bias in the data, they may consider using
+the symmetric version.
 
 # Session Information
 

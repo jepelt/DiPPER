@@ -9,3 +9,5 @@ inst/stan/.*\.rds$
 ^src/stan/.*\.o$
 ^DiPPER\.BiocCheck$
 ^\.gitattributes$
+^codecov\.yml$
+^\.github$

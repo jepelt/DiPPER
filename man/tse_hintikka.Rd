@@ -27,6 +27,6 @@ A \code{TreeSummarizedExperiment} object containing a subset of gut
 microbiome data from an experiment studying the effects of a high-fat
 diet and xylo-oligosaccharide (XOS) supplementation on rats (N = 20 + 20).
 The abundance data are sequencing counts and they have been agglomerated
-to the genus level.z
+to the genus level.
 }
 \keyword{datasets}

@@ -7,12 +7,9 @@ DiPPER is a Bayesian hierarchical model-based approach designed for
 *differential prevalence analysis*, that is, for analyzing
 associations between the *presence/absence status* of taxonomic features 
 (e.g. microbial species or genera) and an external variable (e.g. host 
-disease status).
-
-Alongside the variable of interest (e.g. disease status), DiPPER can adjust for
-*covariates* (e.g. age, sex, BMI) and it automatically accounts for sequencing
-depth by default. DiPPER can also be used in *longitudinal* (repeated measures)
-designs.
+disease status). This can be done while adjusting for *covariates* (e.g. age,
+sex, BMI) and/or for sequencing depth. DiPPER can also be used in *longitudinal*
+(repeated measures) designs.
 
 ## Advantages of DiPPER
 
@@ -54,8 +51,7 @@ cmdstanr::install_cmdstan()
 
 **2. Install DiPPER**
 
-Once CmdStan is ready, install DiPPER. Using `BiocManager` automatically
-installs all required Bioconductor dependencies as well.
+Once CmdStan is ready, install DiPPER.
 
 ```r
 # Install BiocManager if it is not already installed
@@ -63,8 +59,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
     install.packages("BiocManager")
 }
 
-# Install the development version from GitHub
-BiocManager::install("jepelt/DiPPER")
+BiocManager::install("DiPPER")
 ```
 
 DiPPER compiles its Stan models during installation, which takes a few minutes
@@ -87,13 +82,19 @@ data("tse_hintikka")
 # Run DiPPER.
 # The first term in the formula (here: Fat) is automatically used as the
 # variable of interest. XOS (xylo-oligosaccharide supplementation) is included
-# as a covariate. The name of the assay (here: 'counts') must also be provided.
+# as a covariate. As the data consist of sequenecing counts, it is recommended
+# to control for sequancing depth, too, by setting `read.depth = TRUE`.
 fit <- dipper(
     tse = tse_hintikka,
+    assay.type = "counts", # assay name in the tse object
+    data.type = "counts", # type of data in the assay
     formula = ~ Fat + XOS,
-    assay.type = "counts",
+    read.depth = TRUE,
     niter = 400 # This needs to be increased in practice!
 )
+
+# Print the details of the fit
+print(fit)
 
 # Extract summarized results as a data.frame
 res <- summary(fit)

@@ -12,7 +12,7 @@
     if (!is.null(tse)) {
         if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
             stop(
-                "Package 'SummarizedExperiment' is required for",
+                "Package 'SummarizedExperiment' is required for ",
                 "SummarizedExperiment and TreeSummarizedExperiment input.",
                 call. = FALSE
             )
@@ -53,6 +53,31 @@
 }
 
 
+#' Resolve and validate the data type
+#'
+#' The data type has no default, because it determines how presence is
+#' defined and whether read depth can be derived from the data.
+#'
+#' @return The data type as a single character value.
+#'
+#' @keywords internal
+#' @noRd
+.dipper_resolve_data_type <- function(data.type) {
+
+    allowed <- c("counts", "relabundance", "abundance", "pa")
+
+    if (is.null(data.type)) {
+        stop(
+            "Please specify 'data.type'. One of: ",
+            paste0("\"", allowed, "\"", collapse = ", "), ".",
+            call. = FALSE
+        )
+    }
+
+    match.arg(data.type, allowed)
+}
+
+
 #' Validate the abundance matrix against the declared data type
 #'
 #' @return Invisibly `NULL`. Called for the side effect of stopping on
@@ -69,15 +94,27 @@
         )
     }
 
+    # Negative values indicate transformed data (e.g. CLR or log), from which
+    # presence and absence cannot be recovered. Checked for all data types.
+    if (any(raw_mat < 0)) {
+        stop(
+            "The abundance data contains negative values. Presence/absence ",
+            "cannot be determined from transformed data (e.g. CLR or log). ",
+            "Use the untransformed assay, or supply presence/absence data ",
+            "with data.type = 'pa'.",
+            call. = FALSE
+        )
+    }
+
     if (data.type == "counts") {
-        if (any(raw_mat < 0) || any(raw_mat %% 1 != 0)) {
+        if (any(raw_mat %% 1 != 0)) {
             stop(
-                "Count data must contain non-negative integers.",
+                "Count data must contain integers.",
                 call. = FALSE
             )
         }
     } else if (data.type == "relabundance") {
-        if (any(raw_mat < 0) || any(raw_mat > 1)) {
+        if (any(raw_mat > 1)) {
             stop(
                 "Relative abundance values must be between 0 and 1.",
                 call. = FALSE
@@ -98,11 +135,16 @@
         }
     }
 
+    # data.type = "abundance" only requires non-negative values
+
     invisible(NULL)
 }
 
 
 #' Convert an abundance matrix into a presence/absence matrix
+#'
+#' The threshold is always compared with the values on the scale of the data
+#' as given (counts, relative abundances or other abundances).
 #'
 #' @return A numeric matrix of zeros and ones.
 #'
@@ -128,11 +170,6 @@
 
     if (threshold < 0) {
         stop("threshold cannot be negative.", call. = FALSE)
-    }
-
-    if (threshold > 0 && threshold < 1 && data.type == "counts") {
-        rel_ab <- sweep(raw_mat, 2, colSums(raw_mat), "/")
-        return(ifelse(rel_ab > threshold, 1, 0))
     }
 
     ifelse(raw_mat > threshold, 1, 0)
@@ -177,7 +214,7 @@
 
 #' Split a model formula into its fixed part and a random intercept
 #'
-#' Only a single random intercept of the form `(1 | id)` is supported.
+#' Only a single random intercept of the form `(1 | id)` is currently supported.
 #'
 #' @return A list with elements `is_longitudinal`, `id_var` and
 #'   `fixed_formula`.
@@ -238,7 +275,8 @@
 #' @noRd
 .dipper_resolve_var_of_interest <- function(fixed_formula,
                                             meta_df,
-                                            var.of.interest) {
+                                            var.of.interest,
+                                            verbose = TRUE) {
 
     vars_in_model <- all.vars(fixed_formula)
     missing_vars <- setdiff(vars_in_model, colnames(meta_df))
@@ -257,7 +295,11 @@
             stop("The formula has no predictors.", call. = FALSE)
         }
         var.of.interest <- term_labels[1]
-        message("Using '", var.of.interest, "' as the variable of interest.")
+        if (verbose) {
+            message(
+                "Using '", var.of.interest, "' as the variable of interest."
+            )
+        }
     }
 
     if (!var.of.interest %in% colnames(meta_df)) {
@@ -273,6 +315,10 @@
 
 #' Add the read depth covariate to the metadata and the model formulas
 #'
+#' Read depth is either computed as the sample totals of the count data
+#' (\code{read.depth = TRUE}) or taken from a metadata column. In both cases
+#' it is log10-transformed and added to the model as \code{log10_read_depth}.
+#'
 #' @return A list with elements `meta_df`, `formula`, `fixed_formula` and
 #'   `read.depth.var`.
 #'
@@ -285,7 +331,44 @@
                                    formula,
                                    fixed_formula) {
 
-    read.depth.var <- NULL
+    if (is.null(read.depth)) {
+        # For count data, whether the sample totals reflect the true read depth
+        # depends on preprocessing that DiPPER cannot detect, so the user must
+        # choose explicitly. Other data types carry no read depth information.
+        if (data.type == "counts") {
+            stop(
+                "Please specify 'read.depth' for count data:\n",
+                "- TRUE: read depth is computed as the sample totals and ",
+                "controlled for. Use with non-rarefied sequencing counts.\n",
+                "- A metadata column name: read depths stored in the metadata ",
+                "are controlled for, e.g. computed before heavy filtering.\n",
+                "- FALSE: read depth is not controlled for. Use e.g. with ",
+                "rarefied data.",
+                call. = FALSE
+            )
+        }
+        read.depth <- FALSE
+    }
+
+    if (!(is.logical(read.depth) || is.character(read.depth)) ||
+        length(read.depth) != 1 || is.na(read.depth)) {
+        stop(
+            "'read.depth' must be TRUE, FALSE or a single metadata column ",
+            "name.",
+            call. = FALSE
+        )
+    }
+
+    if (isFALSE(read.depth)) {
+        return(list(
+            meta_df = meta_df,
+            formula = formula,
+            fixed_formula = fixed_formula,
+            read.depth.var = NULL
+        ))
+    }
+
+    read.depth.var <- "log10_read_depth"
 
     if (isTRUE(read.depth)) {
         if (data.type != "counts") {
@@ -295,17 +378,10 @@
                 call. = FALSE
             )
         }
-        meta_df$log10_read.depth <- log10(colSums(raw_mat))
-        read.depth.var <- "log10_read.depth"
-
-        formula_str <- deparse(fixed_formula)
-        if (!grepl("log10_read.depth", formula_str)) {
-            formula <- stats::update(formula, ~ . + log10_read.depth)
-            fixed_formula <- stats::update(
-                fixed_formula, ~ . + log10_read.depth
-            )
-        }
-    } else if (is.character(read.depth)) {
+        depth <- colSums(raw_mat)
+        source_desc <- "the sample totals"
+        from_column <- FALSE
+    } else {
         if (!read.depth %in% colnames(meta_df)) {
             stop(
                 "Read depth variable '", read.depth,
@@ -313,7 +389,69 @@
                 call. = FALSE
             )
         }
-        read.depth.var <- read.depth
+        # The raw column must not enter the model alongside its log10 version
+        if (read.depth %in% all.vars(fixed_formula)) {
+            stop(
+                "Do not include the read depth variable '", read.depth,
+                "' in 'formula'. It is added automatically as ",
+                "log10_read_depth.",
+                call. = FALSE
+            )
+        }
+        depth <- meta_df[[read.depth]]
+        source_desc <- paste0("metadata column '", read.depth, "'")
+        from_column <- TRUE
+
+        if (!is.numeric(depth)) {
+            stop(
+                "Read depth variable '", read.depth, "' must be numeric.",
+                call. = FALSE
+            )
+        }
+    }
+
+    # log10 requires positive, non-missing read depths. Checked before the
+    # comparisons below, which would otherwise be NA for a column with NAs.
+    if (anyNA(depth) || any(depth <= 0)) {
+        stop(
+            "Read depths from ", source_desc, " must be positive and ",
+            "non-missing.",
+            call. = FALSE
+        )
+    }
+
+    # Raw read depths are in the thousands or more, so small values suggest
+    # the column has already been log-transformed
+    if (from_column && max(depth) < 100) {
+        warning(
+            "Read depths from ", source_desc, " are unusually small ",
+            "(max ", signif(max(depth), 3), "). Give read depths as ",
+            "numbers of reads; DiPPER applies the log10 transformation ",
+            "itself.",
+            call. = FALSE
+        )
+    }
+
+    # Read depth cannot explain detection if it hardly varies between samples.
+    if (length(depth) > 1) {
+        depth_sd <- stats::sd(log10(depth))
+        if (depth_sd < 0.01) {
+            warning(
+                "Read depths from ", source_desc, " vary very little between ",
+                "samples (SD of log10 read depth ",
+                sprintf("%.4f", depth_sd), "). Consider setting read.depth = ",
+                "FALSE.",
+                call. = FALSE
+            )
+        }
+    }
+
+    meta_df[[read.depth.var]] <- log10(depth)
+
+    formula_str <- paste(deparse(fixed_formula), collapse = " ")
+    if (!grepl(read.depth.var, formula_str, fixed = TRUE)) {
+        formula <- stats::update(formula, ~ . + log10_read_depth)
+        fixed_formula <- stats::update(fixed_formula, ~ . + log10_read_depth)
     }
 
     list(
@@ -327,14 +465,16 @@
 
 #' Standardize numeric covariates and record the scales used
 #'
-#' The read depth covariate is only centered, not scaled, so that its
-#' coefficient stays on the log10 scale.
+#' The read depth covariate is left unscaled, so that its
+#' coefficient stays on the log10 scale. All design matrix columns, including
+#' read depth and dummy variables related to factors, are centered later in
+#' `.dipper_build_design()`.
 #'
 #' @return A list with elements `meta_df` and `continuous_scales`.
 #'
 #' @keywords internal
 #' @noRd
-.dipper_scale_covariates <- function(meta_df, vars_to_scale, read.depth.var) {
+.dipper_scale_covariates <- function(meta_df, vars_to_scale) {
 
     continuous_scales <- list()
 
@@ -343,16 +483,10 @@
             next
         }
 
-        if (!is.null(read.depth.var) && var == read.depth.var) {
-            meta_df[[var]] <- as.numeric(
-                scale(meta_df[[var]], center = TRUE, scale = FALSE)
-            )
-        } else {
-            var_sd <- stats::sd(meta_df[[var]], na.rm = TRUE)
-            if (var_sd > 0) {
-                continuous_scales[[var]] <- var_sd
-                meta_df[[var]] <- as.numeric(scale(meta_df[[var]]))
-            }
+        var_sd <- stats::sd(meta_df[[var]], na.rm = TRUE)
+        if (var_sd > 0) {
+            continuous_scales[[var]] <- var_sd
+            meta_df[[var]] <- as.numeric(scale(meta_df[[var]]))
         }
     }
 
@@ -369,7 +503,10 @@
 #'
 #' @keywords internal
 #' @noRd
-.dipper_filter_taxa <- function(pa_matrix, min.present, min.absent) {
+.dipper_filter_taxa <- function(pa_matrix,
+                                min.present,
+                                min.absent,
+                                verbose = TRUE) {
 
     n_taxa_initial <- nrow(pa_matrix)
     N <- ncol(pa_matrix)
@@ -401,10 +538,12 @@
         )
     }
 
-    message(
-        "Filtering: ", n_taxa_initial - n_taxa_final, " taxa removed, ",
-        n_taxa_final, " taxa retained for analysis."
-    )
+    if (verbose) {
+        message(
+            "Filtering: ", n_taxa_initial - n_taxa_final, " taxa removed, ",
+            n_taxa_final, " taxa retained for analysis."
+        )
+    }
 
     pa_matrix
 }
@@ -422,15 +561,19 @@
 .dipper_build_design <- function(fixed_formula, meta_df, var.of.interest) {
 
     X_full <- stats::model.matrix(fixed_formula, data = meta_df)
-    X_design <- X_full[, -1, drop = FALSE]
 
-    var_cols <- grep(var.of.interest, colnames(X_design))
-    if (length(var_cols) == 0) {
+    term_labels <- attr(stats::terms(fixed_formula), "term.labels")
+    term_idx <- match(var.of.interest, term_labels)
+    if (is.na(term_idx)) {
         stop(
             "Variable '", var.of.interest, "' not found in design matrix.",
             call. = FALSE
         )
     }
+
+    assign_vec <- attr(X_full, "assign")[-1]
+    X_design <- X_full[, -1, drop = FALSE]
+    var_cols <- which(assign_vec == term_idx)
 
     other_cols <- setdiff(seq_len(ncol(X_design)), var_cols)
     X_design <- X_design[, c(var_cols, other_cols), drop = FALSE]
@@ -462,10 +605,12 @@
             "The variable of interest ('", var.of.interest, "') has ",
             length(var_levels), " levels (",
             paste(var_levels, collapse = ", "), ").\n",
-            "DiPPER currently supports only binary or continuous ",
-            "variables.\n",
-            "Please combine levels, or subset your data to compare groups ",
-            "pairwise (e.g., ", var_levels[1], " vs ", var_levels[2], ").",
+            "DiPPER currently supports only binary or continuous variables ",
+            "of interest. To compare two of the levels (e.g., ", var_levels[1],
+            " vs ", var_levels[2], "), please subset the data by removing the ",
+            "observations belonging to the other levels.\n",
+            "Note, however, that variables with more than two levels can be ",
+            "used as control variables in the model.",
             call. = FALSE
         )
     }
@@ -485,48 +630,80 @@
 #' Prepare data for DiPPER
 #'
 #' @param tse A (Tree)SummarizedExperiment object.
-#' @param formula Model formula.
-#' @param assay A matrix containing counts, relative abundances, or
-#'   presence/absence data (required if tse is NULL). Rows should be
-#'   taxa/features, columns should be samples.
-#' @param meta A data.frame containing metadata (required if tse is NULL).
 #' @param assay.type Character. Name of the assay in the TSE object to use.
 #'   Required if tse is provided.
-#' @param data.type Character. Type of the data: "counts" (default),
-#'   "relabundance", or "pa" (presence/absence).
+#' @param assay A matrix containing counts, relative abundances, other
+#'   non-negative abundances, or presence/absence data (required if tse is
+#'   NULL). Rows should be taxa/features, columns should be samples.
+#' @param meta A data.frame containing metadata (required if tse is NULL).
+#' @param data.type Character. Type of the data. Required, one of:
+#'   \itemize{
+#'     \item \code{"counts"}: sequencing read counts (non-negative integers).
+#'     \item \code{"relabundance"}: relative abundances (values between 0 and 1,
+#'       with sample sums at most 1).
+#'     \item \code{"abundance"}: any other non-negative abundances, such as
+#'       pathway abundances, CPM or TPM values.
+#'     \item \code{"pa"}: presence/absence data (0s and 1s).
+#'   }
+#'   Transformed data with negative values (e.g. CLR or log) are not
+#'   supported, because presence and absence cannot be determined from them.
+#' @param formula Model formula.
 #' @param var.of.interest The variable of interest from the formula.
 #'   If NULL, the first term of the formula is automatically used.
-#' @param read.depth Logical or character. If TRUE, calculates log10 read depth
-#'   from counts. If character, uses the specified metadata column.
-#' @param threshold Numeric or function. Threshold for presence.
-#'   If between 0 and 1, the threshold is based on relative abundance (e.g.,
-#'   0.05 means that relative abundances > 0.05 are considered present).
-#'   If whole number, the threshold is based on counts (e.g. 5 means that
-#'   count > 5 is considered present).
-#'   If a function (e.g. median), it is applied for the given assay for each
-#'   feature. Default is 0. Ignored if data.type is "pa".
+#' @param read.depth How to control for sequencing read depth. Required for
+#'   \code{data.type = "counts"}; for other data types the default (NULL)
+#'   means that read depth is not controlled for. One of:
+#'   \itemize{
+#'     \item \code{TRUE}: read depth is computed as the sample totals.
+#'       Requires \code{data.type = "counts"}. Use with non-rarefied
+#'       sequencing counts.
+#'     \item A metadata column name: read depths are taken from the specified
+#'       column, e.g. read depths computed before filtering. Give the read
+#'       depths on their original scale (numbers of reads), and do not
+#'       include the column in \code{formula}.
+#'     \item \code{FALSE}: read depth is not controlled for, e.g. for rarefied
+#'       data.
+#'   }
+#'   With \code{TRUE} or a column name, read depth is automatically
+#'   log10-transformed and added to the model as the covariate
+#'   \code{log10_read_depth}.
+#' @param threshold Numeric or function. A feature is considered present in a
+#'   sample if its value is greater than the threshold. The threshold is on
+#'   the scale of the data: counts for \code{"counts"}, proportions for
+#'   \code{"relabundance"}, and the original units for \code{"abundance"}.
+#'   The default is 0, so a feature is absent only if its value is exactly
+#'   zero. If a function (e.g. median), it is applied to each feature to
+#'   obtain feature-specific thresholds. Ignored if data.type is \code{"pa"}.
 #' @param min.present For taxon/feature filtering. Minimum number or proportion
 #'   of samples where a taxon must be present. Default is 5.
 #' @param min.absent  For taxon/feature filtering. Minimum number or proportion
 #'   of samples where a taxon must be absent. Default is min.present.
+#' @param verbose Logical. Whether to print progress messages. Default is
+#'   TRUE.
 #'
 #' @keywords internal
 #' @importFrom stats model.matrix update complete.cases terms as.formula sd
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 #' @importFrom SummarizedExperiment assay colData
 prep_dipper_data <- function(tse = NULL,
-                             formula,
+                             assay.type = NULL,
                              assay = NULL,
                              meta = NULL,
-                             assay.type = NULL,
-                             data.type = c("counts", "relabundance", "pa"),
+                             data.type = NULL,
+                             formula,
                              var.of.interest = NULL,
-                             read.depth = TRUE,
+                             read.depth = NULL,
                              threshold = 0,
                              min.present = 5,
-                             min.absent = min.present) {
+                             min.absent = min.present,
+                             verbose = TRUE) {
 
-    data.type <- match.arg(data.type)
+    if (missing(formula)) {
+        stop("Please specify 'formula', e.g. formula = ~ group.",
+             call. = FALSE)
+    }
+
+    data.type <- .dipper_resolve_data_type(data.type)
 
 
     # 1. Input extraction ------------------------------------------------------
@@ -553,7 +730,7 @@ prep_dipper_data <- function(tse = NULL,
     # 4. Validate formula variables and extract var.of.interest ----------------
     vars_in_model <- all.vars(fixed_formula)
     var.of.interest <- .dipper_resolve_var_of_interest(
-        fixed_formula, meta_df, var.of.interest
+        fixed_formula, meta_df, var.of.interest, verbose
     )
 
 
@@ -569,14 +746,28 @@ prep_dipper_data <- function(tse = NULL,
 
     # 6. Standardize numeric covariates and track scales -----------------------
     scaled <- .dipper_scale_covariates(
-        meta_df, setdiff(vars_in_model, id_var), read.depth.var
+        meta_df, setdiff(vars_in_model, id_var)
     )
     meta_df <- scaled$meta_df
     continuous_scales <- scaled$continuous_scales
 
 
     # 7. Filtering taxa/features based on prevalence ---------------------------
-    pa_matrix <- .dipper_filter_taxa(pa_matrix, min.present, min.absent)
+    K_unfiltered <- nrow(pa_matrix)
+    pa_matrix <- .dipper_filter_taxa(
+        pa_matrix, min.present, min.absent, verbose
+    )
+
+    taxa_names <- rownames(pa_matrix)
+    if (is.null(taxa_names)) {
+        taxa_names <- paste0("feature", seq_len(nrow(pa_matrix)))
+        if (verbose) {
+            message(
+                "The abundance data has no rownames. Naming the features ",
+                "feature1, feature2, ..."
+            )
+        }
+    }
 
 
     # 8. Build design matrix and check NAs -------------------------------------
@@ -615,8 +806,9 @@ prep_dipper_data <- function(tse = NULL,
         X = X_design,
         N = ncol(pa_matrix),
         K = nrow(pa_matrix),
+        K_unfiltered = K_unfiltered,
         P = ncol(X_design),
-        taxa_names = rownames(pa_matrix),
+        taxa_names = taxa_names,
         sample_names = colnames(pa_matrix),
         design_matrix_cols = colnames(X_design),
         formula = formula,

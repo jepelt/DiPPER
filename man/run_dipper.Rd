@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_dipper.R
 \name{run_dipper}
 \alias{run_dipper}
-\title{Run the DiPPER model using CmdStan}
+\title{Fit the DiPPER model using CmdStan}
 \usage{
 run_dipper(
   prep.data,
@@ -16,9 +16,10 @@ run_dipper(
   max.treedepth = 10,
   run.diagnostics = TRUE,
   diagnostics.level = c("basic", "full"),
-  keep.pars = "beta",
+  keep.pars = c("beta", "tau", "nu"),
   keep.stanfit = FALSE,
   print.progress = 200,
+  verbose = TRUE,
   prior.alpha.sd = 4,
   prior.tau.sd = 1,
   prior.nu.sd = 0.05,
@@ -32,9 +33,11 @@ run_dipper(
 \arguments{
 \item{prep.data}{The list returned by \code{prep_dipper_data}.}
 
-\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5)
-is used for the differential prevalence parameters of interest. If FALSE
-(default), the prior is allowed to be asymmetric.}
+\item{symmetric}{Logical. If TRUE, a symmetric Laplace prior (nu = 0.5) is
+used for the differential prevalence parameters of interest. If FALSE
+(default), the asymmetry parameter nu is estimated from the data. See the
+Details section of \code{\link{dipper}} for guidance on choosing between
+the two.}
 
 \item{niter}{Total number of MCMC iterations per chain (including warmup).
 Default is 2000.}
@@ -48,12 +51,14 @@ Defaults to floor(niter / 2).}
 
 \item{seed}{Random seed for reproducibility. Default is 1.}
 
-\item{adapt.delta}{Target average acceptance probability. Default is 0.8.}
+\item{adapt.delta}{Target average acceptance probability in MCMC sampling.
+Default is 0.8.}
 
-\item{max.treedepth}{Maximum depth of the trees. Default is 10.}
+\item{max.treedepth}{Maximum depth of the trees in MCMC sampling. Default is
+10.}
 
 \item{run.diagnostics}{Logical. Whether to run convergence diagnostics
-after sampling. Default is TRUE.}
+after MCMC sampling. Default is TRUE.}
 
 \item{diagnostics.level}{Character. Level of MCMC diagnostics to run.
 "basic" (default) checks main parameters (alpha, beta, covariates,
@@ -62,16 +67,21 @@ hyperparameters).
 
 \item{keep.pars}{Character vector of Stan parameter names whose posterior
 draws are retained in the returned object, or NULL to retain all of them.
-The default, "beta", keeps only the differential prevalence parameters of
-the variable of interest, which is what \code{summary} and \code{plot}
-need. Note that this argument does not affect convergence diagnostics.}
+The default, \code{c("beta", "tau", "nu")}, keeps the differential
+prevalence parameters of the variable of interest together with the two
+hyperparameters of the hierarchical Laplace prior. \code{nu} is dropped
+automatically when \code{symmetric = TRUE}.}
 
 \item{keep.stanfit}{Logical. Whether to include the underlying CmdStanR
 fit R6 object in the returned object (e.g. for manual model fit checking).
 Default is FALSE.}
 
 \item{print.progress}{How often to print MCMC progress. Set to 0 or
-FALSE to disable. Default is 200.}
+FALSE to disable. Default is 200. Ignored if verbose = FALSE.}
+
+\item{verbose}{Logical. Whether to print any progress messages issued by
+DiPPER functions. Default is TRUE. Setting verbose = FALSE overrides
+\code{print.progress}.}
 
 \item{prior.alpha.sd}{Prior standard deviation for alpha (fixed intercept
 for centered variables). Default is 4.0.}
@@ -100,12 +110,12 @@ CmdStanR model object.}
 }
 \value{
 A list of class \code{dipper_fit} with elements \code{draws} (a
-matrix of posterior draws, with one column per retained parameter),
-\code{dipper_data}, \code{symmetric} and \code{diagnostics}. If
-\code{keep.stanfit = TRUE}, the CmdStanR fit R6 object is included as
-\code{stanfit}.
+matrix of posterior draws, with one column per retained parameter. See
+\code{keep.pars}), \code{dipper_data}, \code{symmetric} and
+\code{diagnostics}. If \code{keep.stanfit = TRUE}, the CmdStanR fit R6
+object is included as \code{stanfit}.
 }
 \description{
-Run the DiPPER model using CmdStan
+Fit the DiPPER model using CmdStan
 }
 \keyword{internal}

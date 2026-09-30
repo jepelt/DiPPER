@@ -1,6 +1,6 @@
 Package: DiPPER
 Title: Differential Prevalence via Probabilistic Estimation in R
-Version: 0.99.0
+Version: 0.99.1
 Authors@R: c(
     person(given = "Juho",
            family = "Pelto",
@@ -26,7 +26,7 @@ License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends: 
-    R (>= 4.5.0)
+    R (>= 4.6.0)
 Imports: 
     instantiate,
     SummarizedExperiment,
@@ -35,7 +35,7 @@ Imports:
     utils,
     ggplot2
 Suggests: 
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.5),
     knitr,
     rmarkdown,
     BiocStyle
@@ -44,7 +44,7 @@ biocViews: Software, Microbiome, Bayesian, Regression, DifferentialExpression,
     Sequencing
 URL: https://github.com/jepelt/DiPPER
 BugReports: https://github.com/jepelt/DiPPER/issues
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 LazyData: false
 VignetteBuilder: knitr
