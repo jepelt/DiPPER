@@ -25,6 +25,11 @@ jobs:
           extra-packages: any::covr, any::xml2
           needs: coverage
 
+      # CmdStan is not installed on the runner, so the tests that require
+      # MCMC sampling are skipped by tests/testthat/setup.R. The coverage figure
+      # printed below is therefore lower than the one obtained locally with
+      # CmdStan present. It is printed to the log rather than uploaded to a
+      # coverage service, to avoid reporting a misleading number.
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(
@@ -33,17 +38,7 @@ jobs:
             install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
           )
           print(cov)
-          covr::to_cobertura(cov)
         shell: Rscript {0}
-
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
-        with:
-          # Fail if error if not on PR, or if on PR and token is given
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN }}
-          files: ./cobertura.xml
-          plugins: noop
-          disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Show testthat output
         if: always()
