@@ -446,9 +446,10 @@ run_dipper <- function(prep.data,
             P = prep.data$P
         )
 
-        # posterior::ess_* warns when the ESS estimate is capped at the number
-        # of draws. Only the minimum ESS is used below, so the cap is
-        # irrelevant here and the warning would fire on every run.
+        # The suppressWarnings() below is there to prevent a warning due to
+        # capped effective sample size (ESS). The cap only truncates the largest
+        # ESS values, but DiPPER only needs the minimum value for diagnostics.
+        # Therefore, the warning is irrelevant here.
         summ <- suppressWarnings(
             fit$summary(target_vars, "rhat", "ess_bulk", "ess_tail")
         )
