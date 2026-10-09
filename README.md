@@ -62,6 +62,14 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 BiocManager::install("DiPPER")
 ```
 
+Note! DiPPER is currently under review for Bioconductor. Until it has been
+accepted, the command above will not find the package, but DiPPER can be
+installed from GitHub instead.
+
+```r
+BiocManager::install("jepelt/DiPPER")
+```
+
 DiPPER compiles its Stan models during installation, which takes a few minutes
 and produces verbose output. This is expected, and it is done only once.
 
