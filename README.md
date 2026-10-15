@@ -62,12 +62,13 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 BiocManager::install("DiPPER")
 ```
 
-Note! DiPPER is currently under review for Bioconductor. Until it has been
-accepted, the command above will not find the package, but DiPPER can be
-installed from GitHub instead.
+Note! DiPPER has been accepted to Bioconductor, but the command above will not
+work until Bioconductor 3.24 is released. Until then, DiPPER can be installed
+from the development version of Bioconductor as follows:
 
 ```r
-BiocManager::install("jepelt/DiPPER")
+BiocManager::install(version = "devel")
+BiocManager::install("DiPPER")
 ```
 
 DiPPER compiles its Stan models during installation, which takes a few minutes
